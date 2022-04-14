@@ -1,0 +1,29 @@
+{
+  "name": "bricebou/better-typography",
+  "type": "grav-plugin",
+  "description": "Automatically improves the typography of your content. Provides a Twig filter.",
+  "keywords": ["plugin"],
+  "homepage": "https://github.com/bricebou/grav-plugin-better-typography",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Brice Boucard",
+      "email": "brice@reclic.dev",
+      "role": "Developer"
+    }
+  ],
+  "require": {
+    "php": ">=7.1.3"
+  },
+  "autoload": {
+    "psr-4": {
+      "Grav\\Plugin\\BetterTypography\\": "classes/"
+    },
+    "classmap":  ["better-typography.php"]
+  },
+  "config": {
+    "platform": {
+      "php": "7.1.3"
+    }
+  }
+}

@@ -1,0 +1,32 @@
+name: Better Typography
+slug: better-typography
+type: plugin
+version: 0.1.0
+description: Automatically improves the typography of your content. Provides a Twig filter.
+icon: plug
+author:
+  name: Brice Boucard
+  email: brice@reclic.dev
+homepage: https://github.com/bricebou/grav-plugin-better-typography
+demo: http://demo.yoursite.com
+keywords: grav, plugin, etc
+bugs: https://github.com/bricebou/grav-plugin-better-typography/issues
+docs: https://github.com/bricebou/grav-plugin-better-typography/blob/develop/README.md
+license: MIT
+
+dependencies:
+  - { name: grav, version: '>=1.6.0' }
+
+form:
+  validation: loose
+  fields:
+    enabled:
+      type: toggle
+      label: PLUGIN_ADMIN.PLUGIN_STATUS
+      highlight: 1
+      default: 0
+      options:
+        1: PLUGIN_ADMIN.ENABLED
+        0: PLUGIN_ADMIN.DISABLED
+      validate:
+        type: bool
