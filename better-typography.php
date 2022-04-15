@@ -72,22 +72,73 @@ class BetterTypographyPlugin extends Plugin
 		$this->grav['page']->setRawContent($content);
     }
 
+
+	/**
+	 * betterTypo
+	 *
+	 * @param  string $string
+	 * @param  string (optional) $language
+	 * @return string
+	 */
 	public function betterTypo(string $string, string $language = null): string
 	{
+		$config = $this->config();
+		$settings = new \PHP_Typography\Settings( true );
+
+		// DASH STYLE
+		if ($config['smart_dashes'] === true)
+		{
+			$settings->set_smart_dashes( true );
+			$settings->set_smart_dashes_style( $config['dash_style'] );
+		}
+		else
+		{
+			$settings->set_smart_dashes( false );
+		}
+
+		// SMART QUOTES
+		if ($config['smart_quotes'] === true)
+		{
+			$settings->set_smart_quotes( true );
+			$settings->set_smart_quotes_primary( $config['quote_style'] );
+		}
+		else
+		{
+			$settings->set_smart_quotes( false );
+		}
+
+		// LANGUAGE
 		if(!$language) {
 			$language = $this->grav['language']->getLanguage();
 		}
 
-		$settings = new \PHP_Typography\Settings( true );
-		$settings->set_smart_quotes_primary( 'doubleGuillemetsFrench' );
-		$settings->set_smart_quotes_secondary( 'doubleCurled' );
-		$settings->set_smart_dashes_style( 'international' );
-		$settings->set_french_punctuation_spacing( true );
-		$settings->set_diacritic_language( $language );
-		$settings->set_hyphenation_language( $language );
-		$settings->set_hyphenation( true );
-		$settings->set_smart_exponents( true );
-		$settings->set_smart_ordinal_suffix_match_roman_numerals( true );
+		// IF FRENCH
+		if ($language === 'fr') {
+			$settings->set_french_punctuation_spacing( true );
+			$settings->set_smart_ordinal_suffix_match_roman_numerals( true );
+		}
+
+		// HYPHENATIONS
+		if ($config['hyphenations'] === true)
+		{
+			$settings->set_hyphenation( true );
+			$settings->set_hyphenation_language( $language );
+		}
+		else
+		{
+			$settings->set_hyphenation( false );
+		}
+
+		// DIACRITICS
+		if ($config['diacritics'] === true)
+		{
+			$settings->set_smart_diacritics( true );
+			$settings->set_diacritic_language( $language );
+		}
+		else
+		{
+			$settings->set_smart_diacritics( false );
+		}
 
 		$typography = new \PHP_Typography\PHP_Typography();
 

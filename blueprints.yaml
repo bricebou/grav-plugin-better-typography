@@ -3,7 +3,7 @@ slug: better-typography
 type: plugin
 version: 0.1.0
 description: Automatically improves the typography of your content. Provides a Twig filter.
-icon: plug
+icon: font
 author:
   name: Brice Boucard
   email: brice@reclic.dev
@@ -30,3 +30,74 @@ form:
         0: PLUGIN_ADMIN.DISABLED
       validate:
         type: bool
+    diacritics:
+      type: toggle
+      label: PLUGIN_BETTER_TYPOGRAPHY.DIACRITICS
+      highlight: 1
+      default: 1
+      options:
+        1: PLUGIN_ADMIN.ENABLED
+        0: PLUGIN_ADMIN.DISABLED
+      validate:
+        type: bool
+    hyphenations:
+      type: toggle
+      label: PLUGIN_BETTER_TYPOGRAPHY.HYPHENATIONS
+      highlight: 1
+      default: 1
+      options:
+        1: PLUGIN_ADMIN.ENABLED
+        0: PLUGIN_ADMIN.DISABLED
+      validate:
+        type: bool
+    smart_quotes:
+      type: toggle
+      label: PLUGIN_BETTER_TYPOGRAPHY.SMART_QUOTES
+      highlight: 1
+      default: 1
+      options:
+        1: PLUGIN_ADMIN.ENABLED
+        0: PLUGIN_ADMIN.DISABLED
+      validate:
+        type: bool
+    quote_style:
+      type: select
+      size: medium
+      classes: fancy
+      label: PLUGIN_BETTER_TYPOGRAPHY.QUOTE_STYLE
+      default: 'doubleCurled'
+      options:
+        'doubleGuillemets': '«blabla»'
+        'doubleGuillemetsFrench': '« blabla »'
+        'doubleCurled': '“blabla”'
+        'doubleCurledReversed': '”blabla”'
+        'doubleLow9': '​„blabla”'
+        'doubleLow9Reversed': '„blabla“'
+        'singleCurled': '‘blabla’'
+        'singleCurledReversed': '​’blabla’'
+        'singleLow9': '​‚blabla’'
+        'singleLow9Reversed': '‚blabla‘'
+        'doubleGuillemetsReversed': ' »blabla«'
+        'singleGuillemets': '‹blabla›'
+        'singleGuillemetsReversed': ›blabla‹
+        'cornerBrackets': 「blabla」
+        'whiteCornerBracket': 『blabla』
+    smart_dashes:
+      type: toggle
+      label: PLUGIN_BETTER_TYPOGRAPHY.SMART_DASHES
+      highlight: 1
+      default: 1
+      options:
+        1: PLUGIN_ADMIN.ENABLED
+        0: PLUGIN_ADMIN.DISABLED
+      validate:
+        type: bool
+    dash_style:
+      type: select
+      size: medium
+      classes: fancy
+      label: PLUGIN_BETTER_TYPOGRAPHY.DASHES_STYLE
+      default: 'international'
+      options:
+        'traditionalUS': PLUGIN_BETTER_TYPOGRAPHY.DASHES_TRADITIONALUS
+        'international': PLUGIN_BETTER_TYPOGRAPHY.DASHES_INTERNATIONAL

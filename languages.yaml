@@ -1,2 +1,23 @@
 en:
   PLUGIN_BETTER_TYPOGRAPHY:
+    DIACRITICS: 'Diacritics'
+    HYPHENATIONS: 'Hyphenations'
+    SMART_QUOTES: 'Smart Quotes'
+    QUOTE_STYLE: 'Quotes style'
+    SMART_DASHES: 'Smart Dashes'
+    DASHES_STYLE: 'Dashes style'
+    DASHES_TRADITIONALUS: "-- & --- to —"
+    DASHES_INTERNATIONAL: '-- & --- to – & —'
+
+fr:
+  PLUGIN_BETTER_TYPOGRAPHY:
+    DIACRITICS: 'Diacritiques'
+    HYPHENATIONS: 'Césures'
+    SMART_QUOTES: 'Guillemets intelligents'
+    QUOTE_STYLE: 'Style des guillemets'
+    SMART_DASHES: 'Tirets intelligents'
+    DASHES_STYLE: 'Style des tirets'
+    DASHES_TRADITIONALUS: "-- & --- vers —"
+    DASHES_INTERNATIONAL: '-- & --- vers – & —'
+
+
