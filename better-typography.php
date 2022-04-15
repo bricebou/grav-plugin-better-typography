@@ -50,7 +50,6 @@ class BetterTypographyPlugin extends Plugin
         if ($this->isAdmin()) {
             return;
         }
-
         // Enable the main events we are interested in
         $this->enable([
             // Put your main events here
@@ -73,15 +72,19 @@ class BetterTypographyPlugin extends Plugin
 		$this->grav['page']->setRawContent($content);
     }
 
-	public function betterTypo(string $string): string
+	public function betterTypo(string $string, string $language = null): string
 	{
+		if(!$language) {
+			$language = $this->grav['language']->getLanguage();
+		}
+
 		$settings = new \PHP_Typography\Settings( true );
 		$settings->set_smart_quotes_primary( 'doubleGuillemetsFrench' );
 		$settings->set_smart_quotes_secondary( 'doubleCurled' );
 		$settings->set_smart_dashes_style( 'international' );
 		$settings->set_french_punctuation_spacing( true );
-		$settings->set_diacritic_language( 'fr' );
-		$settings->set_hyphenation_language( 'fr' );
+		$settings->set_diacritic_language( $language );
+		$settings->set_hyphenation_language( $language );
 		$settings->set_hyphenation( true );
 		$settings->set_smart_exponents( true );
 		$settings->set_smart_ordinal_suffix_match_roman_numerals( true );
