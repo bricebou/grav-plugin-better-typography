@@ -85,8 +85,7 @@ class BetterTypographyPlugin extends Plugin
 		$config = $this->config();
 		$settings = new \PHP_Typography\Settings( true );
 
-		// DASH STYLE
-		if ($config['smart_dashes'] === true)
+		if (!empty($config['smart_dashes']))
 		{
 			$settings->set_smart_dashes( true );
 			$settings->set_smart_dashes_style( $config['dash_style'] );
@@ -96,8 +95,7 @@ class BetterTypographyPlugin extends Plugin
 			$settings->set_smart_dashes( false );
 		}
 
-		// SMART QUOTES
-		if ($config['smart_quotes'] === true)
+		if (!empty($config['smart_quotes']))
 		{
 			$settings->set_smart_quotes( true );
 			$settings->set_smart_quotes_primary( $config['quote_style'] );
@@ -107,19 +105,16 @@ class BetterTypographyPlugin extends Plugin
 			$settings->set_smart_quotes( false );
 		}
 
-		// LANGUAGE
 		if(!$language) {
 			$language = $this->grav['language']->getLanguage();
 		}
 
-		// IF FRENCH
 		if ($language === 'fr') {
 			$settings->set_french_punctuation_spacing( true );
 			$settings->set_smart_ordinal_suffix_match_roman_numerals( true );
 		}
 
-		// HYPHENATIONS
-		if ($config['hyphenations'] === true)
+		if (!empty($config['hyphenations']))
 		{
 			$settings->set_hyphenation( true );
 			$settings->set_hyphenation_language( $language );
@@ -129,8 +124,7 @@ class BetterTypographyPlugin extends Plugin
 			$settings->set_hyphenation( false );
 		}
 
-		// DIACRITICS
-		if ($config['diacritics'] === true)
+		if (!empty($config['diacritics']))
 		{
 			$settings->set_smart_diacritics( true );
 			$settings->set_diacritic_language( $language );
