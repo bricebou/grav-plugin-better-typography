@@ -15,7 +15,7 @@ docs: https://github.com/bricebou/grav-plugin-better-typography/blob/develop/REA
 license: MIT
 
 dependencies:
-  - { name: grav, version: '>=1.6.0' }
+  - { name: grav, version: '>=1.7.0' }
 
 form:
   validation: loose
