@@ -109,7 +109,7 @@ class BetterTypographyPlugin extends Plugin
 			$language = $this->grav['language']->getLanguage();
 		}
 
-		if ($language === 'fr') {
+		if ($language === 'fr' && !empty($config['french_specific'])) {
 			$settings->set_french_punctuation_spacing( true );
 			$settings->set_smart_ordinal_suffix_match_roman_numerals( true );
 		}

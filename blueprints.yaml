@@ -101,3 +101,14 @@ form:
       options:
         'traditionalUS': PLUGIN_BETTER_TYPOGRAPHY.DASHES_TRADITIONALUS
         'international': PLUGIN_BETTER_TYPOGRAPHY.DASHES_INTERNATIONAL
+    french_specific:
+      type: toggle
+      label: PLUGIN_BETTER_TYPOGRAPHY.FRENCH
+      help: PLUGIN_BETTER_TYPOGRAPHY.FRENCH_HELP
+      highlight: 1
+      default: 1
+      options:
+        1: PLUGIN_ADMIN.ENABLED
+        0: PLUGIN_ADMIN.DISABLED
+      validate:
+        type: bool
