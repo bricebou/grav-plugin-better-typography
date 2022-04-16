@@ -67,21 +67,21 @@ form:
       label: PLUGIN_BETTER_TYPOGRAPHY.QUOTE_STYLE
       default: 'doubleCurled'
       options:
-        'doubleGuillemets': '«blabla»'
-        'doubleGuillemetsFrench': '« blabla »'
-        'doubleCurled': '“blabla”'
-        'doubleCurledReversed': '”blabla”'
-        'doubleLow9': '​„blabla”'
-        'doubleLow9Reversed': '„blabla“'
-        'singleCurled': '‘blabla’'
-        'singleCurledReversed': '​’blabla’'
-        'singleLow9': '​‚blabla’'
-        'singleLow9Reversed': '‚blabla‘'
-        'doubleGuillemetsReversed': ' »blabla«'
-        'singleGuillemets': '‹blabla›'
-        'singleGuillemetsReversed': ›blabla‹
-        'cornerBrackets': 「blabla」
-        'whiteCornerBracket': 『blabla』
+        'doubleCurled': '&ldquo;foo&rdquo;'
+        'doubleCurledReversed': '&rdquo;foo&rdquo;'
+        'doubleLow9': '&bdquo;foo&rdquo;'
+        'doubleLow9Reversed': '&bdquo;foo&ldquo;'
+        'singleCurled': '&lsquo;foo&rsquo;'
+        'singleCurledReversed': '&rsquo;foo&rsquo;'
+        'singleLow9': '&sbquo;foo&rsquo;'
+        'singleLow9Reversed': '&sbquo;foo&lsquo;'
+        'doubleGuillemetsFrench': '&laquo;&nbsp;foo&nbsp;&raquo;'
+        'doubleGuillemets': '&laquo;foo&raquo;'
+        'doubleGuillemetsReversed': '&raquo;foo&laquo;'
+        'singleGuillemets': '&lsaquo;foo&rsaquo;'
+        'singleGuillemetsReversed': '&rsaquo;foo&lsaquo;'
+        'cornerBrackets': '&#x300c;foo&#x300d;'
+        'whiteCornerBracket': '&#x300e;foo&#x300f;'
     smart_dashes:
       type: toggle
       label: PLUGIN_BETTER_TYPOGRAPHY.SMART_DASHES
