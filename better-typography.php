@@ -4,6 +4,9 @@ namespace Grav\Plugin;
 
 use Composer\Autoload\ClassLoader;
 use Grav\Common\Plugin;
+use PHP_Typography\PHP_Typography;
+use PHP_Typography\Settings;
+use Twig_SimpleFilter;
 
 /**
 * Class BetterTypographyPlugin
@@ -62,7 +65,7 @@ class BetterTypographyPlugin extends Plugin
     public function onTwigInitialized(): void
     {
         $this->grav['twig']->twig()->addFilter(
-            new \Twig_SimpleFilter('bettertypo', [$this, 'betterTypo'])
+            new Twig_SimpleFilter('bettertypo', [$this, 'betterTypo'])
         );
     }
 
@@ -84,7 +87,7 @@ class BetterTypographyPlugin extends Plugin
     public function betterTypo(string $string, string $language = null): string
     {
         $config = $this->config();
-        $settings = new \PHP_Typography\Settings(true);
+        $settings = new Settings(true);
 
         if (!empty($config['smart_dashes'])) {
             $settings->set_smart_dashes(true);
@@ -123,7 +126,7 @@ class BetterTypographyPlugin extends Plugin
             $settings->set_smart_diacritics(false);
         }
 
-        $typography = new \PHP_Typography\PHP_Typography();
+        $typography = new PHP_Typography();
 
         return $typography->process($string, $settings);
     }
