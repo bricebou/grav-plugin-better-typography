@@ -8,6 +8,8 @@ en:
     DASHES_STYLE: 'Dashes style'
     DASHES_TRADITIONALUS: "-- & --- to —"
     DASHES_INTERNATIONAL: '-- & --- to – & —'
+    FRENCH: 'French language'
+    FRENCH_HELP: 'Apply typographic improvements specific to french language, such as double punctuation spacing and roman numerals.'
 
 fr:
   PLUGIN_BETTER_TYPOGRAPHY:
@@ -19,5 +21,7 @@ fr:
     DASHES_STYLE: 'Style des tirets'
     DASHES_TRADITIONALUS: "-- & --- vers —"
     DASHES_INTERNATIONAL: '-- & --- vers – & —'
+    FRENCH: 'Langue française'
+    FRENCH_HELP: 'Amélioration typographiques spécifiques au français: espace fine insécable avant les ponctuation double et gestion des suffixe de siècles en chiffres romains.'
 
 
