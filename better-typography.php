@@ -86,44 +86,46 @@ class BetterTypographyPlugin extends Plugin
     */
     public function betterTypo(string $string, string $language = null): string
     {
-        $config = $this->config();
         $settings = new Settings(true);
-
-        if (!empty($config['smart_dashes'])) {
-            $settings->set_smart_dashes(true);
-            $settings->set_smart_dashes_style($config['dash_style']);
-        } else {
-            $settings->set_smart_dashes(false);
-        }
-
-        if (!empty($config['smart_quotes'])) {
-            $settings->set_smart_quotes(true);
-            $settings->set_smart_quotes_primary($config['quote_style']);
-        } else {
-            $settings->set_smart_quotes(false);
-        }
 
         if (!$language) {
             $language = $this->grav['language']->getLanguage();
         }
 
-        if ($language === 'fr' && !empty($config['french_specific'])) {
+        $useSmartQuotes = $this->config->get('plugins.better-typography.useSmartQuotes', true);
+        $settings->set_smart_quotes($useSmartQuotes);
+
+        if ($useSmartQuotes) {
+            $settings->set_smart_quotes_primary($this->config->get('plugins.better-typography.smartQuotesStyle', 'doubleCurled'));
+            $settings->set_smart_quotes_secondary($this->config->get('plugins.better-typography.smartQuotesStyleSecondary', 'singleCurled'));
+        }
+
+        $useSmartDashes = $this->config->get('plugins.better-typography.useSmartDashes', true);
+        $settings->set_smart_dashes($useSmartDashes);
+
+        if ($useSmartDashes) {
+            $settings->set_smart_dashes_style($this->config->get('plugins.better-typography.dashStyle', 'international'));
+        }
+
+        $applyHyphenations = $this->config->get('plugins.better-typography.applyHyphenations', false);
+        $settings->set_hyphenation($applyHyphenations);
+
+        if ($applyHyphenations) {
+            $settings->set_hyphenation_language($language);
+        }
+
+        $applyFrenchSpecific = $this->config->get('plugins.better-typography.applyFrenchSpecific', false);
+        if ($applyFrenchSpecific && $language === 'fr') {
             $settings->set_french_punctuation_spacing(true);
             $settings->set_smart_ordinal_suffix_match_roman_numerals(true);
+            $settings->set_true_no_break_narrow_space(true);
         }
 
-        if (!empty($config['hyphenations'])) {
-            $settings->set_hyphenation(true);
-            $settings->set_hyphenation_language($language);
-        } else {
-            $settings->set_hyphenation(false);
-        }
+        $useSmartDiacritics = $this->config->get('plugins.better-typography.useSmartDiacritics', false);
 
-        if (!empty($config['diacritics'])) {
+        if ($useSmartDiacritics && $language === $this->config->get('plugins.better-typography.useSmartDiacritics')) {
             $settings->set_smart_diacritics(true);
             $settings->set_diacritic_language($language);
-        } else {
-            $settings->set_smart_diacritics(false);
         }
 
         $typography = new PHP_Typography();

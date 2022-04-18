@@ -1,1 +1,10 @@
 enabled: true
+useSmartQuotes: true                      # replace "foo" with &ldquo;foo&rdquo; or &laquo;&nbsp;foo&nbsp;&raquo;... Depends on the selected quoteStyle
+smartQuotesStyle: doubleCurled            # Style to apply for quotes ; available options are 'doubleCurled' (&ldquo;foo&rdquo;), 'doubleCurledReversed' (&rdquo;foo&rdquo;) 'doubleLow9' (&bdquo;foo&rdquo;), 'doubleLow9Reversed' (&bdquo;foo&ldquo;), 'singleCurled' (&lsquo;foo&rsquo;), 'singleCurledReversed' (&rsquo;foo&rsquo;), 'singleLow9' (&sbquo;foo&rsquo;), 'singleLow9Reversed' (&sbquo;foo&lsquo;), 'doubleGuillemetsFrench' (&laquo;&nbsp;foo&nbsp;&raquo;), 'doubleGuillemets' (&laquo;foo&raquo;), 'doubleGuillemetsReversed' (&raquo;foo&laquo;), 'singleGuillemets' (&lsaquo;foo&rsaquo;), 'singleGuillemetsReversed' (&rsaquo;foo&lsaquo;) 'cornerBrackets' (&#x300c;foo&#x300d;), 'whiteCornerBracket' (&#x300e;foo&#x300f;).
+smartQuotesStyleSecondary: singleCurled   # same as above for smartQuotesStyle
+useSmartDashes: true                      # replace -- & --- to en & em dashes, depending on the selected dashStyle
+smartDashesStyle: international           # 'international' or 'traditionalUS'
+applyHyphenations: false
+applyFrenchSpecific: false                  # apply specific french typographic rules such as unbreakable space before double punctuation (?, !, :, ;) and XVI<sup>e</sup> siècle
+useSmartDiacritics: false                 # replace "creme brulee" with "crème brûlée". Only available for de-DE and en-US languages
+smartDiacriticsLanguage:                  # de-DE or en-US

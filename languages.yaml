@@ -1,11 +1,14 @@
 en:
   PLUGIN_BETTER_TYPOGRAPHY:
     DIACRITICS: 'Diacritics'
+    DIACRITICS_HELP: 'Replace "creme brulee" with "crème brûlée". Only available for de-DE and en-US.'
+    DIACRITICS_LANGUAGE: 'Diacritics language'
     HYPHENATIONS: 'Hyphenations'
     SMART_QUOTES: 'Smart Quotes'
-    QUOTE_STYLE: 'Quotes style'
+    QUOTE_STYLE: 'Quotes Style'
+    QUOTE_STYLE_SECONDARY: 'Secondary Quotes Style'
     SMART_DASHES: 'Smart Dashes'
-    DASHES_STYLE: 'Dashes style'
+    DASHES_STYLE: 'Dashes Style'
     DASHES_TRADITIONALUS: "-- & --- to —"
     DASHES_INTERNATIONAL: '-- & --- to – & —'
     FRENCH: 'French language'
@@ -14,9 +17,12 @@ en:
 fr:
   PLUGIN_BETTER_TYPOGRAPHY:
     DIACRITICS: 'Diacritiques'
+    DIACRITICS_HELP: "Remplacement de \"creme brulee\" par \"crème brûlée\" seulement disponible pour l'anglais US et l'allemand."
+    DIACRITICS_LANGUAGE: 'Langue pour les diacritiques'
     HYPHENATIONS: 'Césures'
     SMART_QUOTES: 'Guillemets intelligents'
     QUOTE_STYLE: 'Style des guillemets'
+    QUOTE_STYLE_SECONDARY: 'Style des guillemets enchâssés'
     SMART_DASHES: 'Tirets intelligents'
     DASHES_STYLE: 'Style des tirets'
     DASHES_TRADITIONALUS: "-- & --- vers —"
