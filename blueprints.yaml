@@ -32,125 +32,138 @@ form:
       validate:
         type: bool
 
-    useSmartQuotes:
-      type: toggle
-      label: PLUGIN_BETTER_TYPOGRAPHY.SMART_QUOTES
-      highlight: 1
-      default: 1
-      options:
-        1: PLUGIN_ADMIN.ENABLED
-        0: PLUGIN_ADMIN.DISABLED
-      validate:
-        type: bool
+    perLanguageSettings:
+      type: list
+      style: vertical
+      label: PLUGIN_BETTER_TYPOGRAPHY.SETTINGS_PER_LANGUAGE
+      min: 1
+      data-max@: 'Grav\Plugin\BetterTypographyPlugin::maxLanguages'
+      fields:
+        .language:
+          type: select
+          label: Language
+          data-options@: 'Grav\Plugin\BetterTypographyPlugin::languageList'
 
-    smartQuotesStyle:
-      type: select
-      size: medium
-      classes: fancy
-      label: PLUGIN_BETTER_TYPOGRAPHY.QUOTE_STYLE
-      default: 'doubleCurled'
-      options:
-        'doubleCurled': '&ldquo;foo&rdquo;'
-        'doubleCurledReversed': '&rdquo;foo&rdquo;'
-        'doubleLow9': '&bdquo;foo&rdquo;'
-        'doubleLow9Reversed': '&bdquo;foo&ldquo;'
-        'singleCurled': '&lsquo;foo&rsquo;'
-        'singleCurledReversed': '&rsquo;foo&rsquo;'
-        'singleLow9': '&sbquo;foo&rsquo;'
-        'singleLow9Reversed': '&sbquo;foo&lsquo;'
-        'doubleGuillemetsFrench': '&laquo;&nbsp;foo&nbsp;&raquo;'
-        'doubleGuillemets': '&laquo;foo&raquo;'
-        'doubleGuillemetsReversed': '&raquo;foo&laquo;'
-        'singleGuillemets': '&lsaquo;foo&rsaquo;'
-        'singleGuillemetsReversed': '&rsaquo;foo&lsaquo;'
-        'cornerBrackets': '&#x300c;foo&#x300d;'
-        'whiteCornerBracket': '&#x300e;foo&#x300f;'
-    smartQuotesStyleSecondary:
-      type: select
-      size: medium
-      classes: fancy
-      label: PLUGIN_BETTER_TYPOGRAPHY.QUOTE_STYLE_SECONDARY
-      default: 'doubleCurled'
-      options:
-        'doubleCurled': '&ldquo;foo&rdquo;'
-        'doubleCurledReversed': '&rdquo;foo&rdquo;'
-        'doubleLow9': '&bdquo;foo&rdquo;'
-        'doubleLow9Reversed': '&bdquo;foo&ldquo;'
-        'singleCurled': '&lsquo;foo&rsquo;'
-        'singleCurledReversed': '&rsquo;foo&rsquo;'
-        'singleLow9': '&sbquo;foo&rsquo;'
-        'singleLow9Reversed': '&sbquo;foo&lsquo;'
-        'doubleGuillemetsFrench': '&laquo;&nbsp;foo&nbsp;&raquo;'
-        'doubleGuillemets': '&laquo;foo&raquo;'
-        'doubleGuillemetsReversed': '&raquo;foo&laquo;'
-        'singleGuillemets': '&lsaquo;foo&rsaquo;'
-        'singleGuillemetsReversed': '&rsaquo;foo&lsaquo;'
-        'cornerBrackets': '&#x300c;foo&#x300d;'
-        'whiteCornerBracket': '&#x300e;foo&#x300f;'
+        .useSmartQuotes:
+          type: toggle
+          label: PLUGIN_BETTER_TYPOGRAPHY.SMART_QUOTES
+          highlight: 1
+          default: 1
+          options:
+            1: PLUGIN_ADMIN.ENABLED
+            0: PLUGIN_ADMIN.DISABLED
+          validate:
+            type: bool
 
-    useSmartDashes:
-      type: toggle
-      label: PLUGIN_BETTER_TYPOGRAPHY.SMART_DASHES
-      highlight: 1
-      default: 1
-      options:
-        1: PLUGIN_ADMIN.ENABLED
-        0: PLUGIN_ADMIN.DISABLED
-      validate:
-        type: bool
+        .smartQuotesStyle:
+          type: select
+          size: medium
+          classes: fancy
+          label: PLUGIN_BETTER_TYPOGRAPHY.QUOTE_STYLE
+          default: 'doubleCurled'
+          options:
+            'doubleCurled': '&ldquo;foo&rdquo;'
+            'doubleCurledReversed': '&rdquo;foo&rdquo;'
+            'doubleLow9': '&bdquo;foo&rdquo;'
+            'doubleLow9Reversed': '&bdquo;foo&ldquo;'
+            'singleCurled': '&lsquo;foo&rsquo;'
+            'singleCurledReversed': '&rsquo;foo&rsquo;'
+            'singleLow9': '&sbquo;foo&rsquo;'
+            'singleLow9Reversed': '&sbquo;foo&lsquo;'
+            'doubleGuillemetsFrench': '&laquo;&nbsp;foo&nbsp;&raquo;'
+            'doubleGuillemets': '&laquo;foo&raquo;'
+            'doubleGuillemetsReversed': '&raquo;foo&laquo;'
+            'singleGuillemets': '&lsaquo;foo&rsaquo;'
+            'singleGuillemetsReversed': '&rsaquo;foo&lsaquo;'
+            'cornerBrackets': '&#x300c;foo&#x300d;'
+            'whiteCornerBracket': '&#x300e;foo&#x300f;'
 
-    smartDashesStyle:
-      type: select
-      size: medium
-      classes: fancy
-      label: PLUGIN_BETTER_TYPOGRAPHY.DASHES_STYLE
-      default: 'international'
-      options:
-        'traditionalUS': PLUGIN_BETTER_TYPOGRAPHY.DASHES_TRADITIONALUS
-        'international': PLUGIN_BETTER_TYPOGRAPHY.DASHES_INTERNATIONAL
+        .smartQuotesStyleSecondary:
+          type: select
+          size: medium
+          classes: fancy
+          label: PLUGIN_BETTER_TYPOGRAPHY.QUOTE_STYLE_SECONDARY
+          default: 'doubleCurled'
+          options:
+            'doubleCurled': '&ldquo;foo&rdquo;'
+            'doubleCurledReversed': '&rdquo;foo&rdquo;'
+            'doubleLow9': '&bdquo;foo&rdquo;'
+            'doubleLow9Reversed': '&bdquo;foo&ldquo;'
+            'singleCurled': '&lsquo;foo&rsquo;'
+            'singleCurledReversed': '&rsquo;foo&rsquo;'
+            'singleLow9': '&sbquo;foo&rsquo;'
+            'singleLow9Reversed': '&sbquo;foo&lsquo;'
+            'doubleGuillemetsFrench': '&laquo;&nbsp;foo&nbsp;&raquo;'
+            'doubleGuillemets': '&laquo;foo&raquo;'
+            'doubleGuillemetsReversed': '&raquo;foo&laquo;'
+            'singleGuillemets': '&lsaquo;foo&rsaquo;'
+            'singleGuillemetsReversed': '&rsaquo;foo&lsaquo;'
+            'cornerBrackets': '&#x300c;foo&#x300d;'
+            'whiteCornerBracket': '&#x300e;foo&#x300f;'
 
-    applyHyphenations:
-      type: toggle
-      label: PLUGIN_BETTER_TYPOGRAPHY.HYPHENATIONS
-      highlight: 0
-      default: 0
-      options:
-        1: PLUGIN_ADMIN.ENABLED
-        0: PLUGIN_ADMIN.DISABLED
-      validate:
-        type: bool
+        .useSmartDashes:
+          type: toggle
+          label: PLUGIN_BETTER_TYPOGRAPHY.SMART_DASHES
+          highlight: 1
+          default: 1
+          options:
+            1: PLUGIN_ADMIN.ENABLED
+            0: PLUGIN_ADMIN.DISABLED
+          validate:
+            type: bool
 
-    applyFrenchSpecific:
-      type: toggle
-      label: PLUGIN_BETTER_TYPOGRAPHY.FRENCH
-      help: PLUGIN_BETTER_TYPOGRAPHY.FRENCH_HELP
-      highlight: 0
-      default: 0
-      options:
-        1: PLUGIN_ADMIN.ENABLED
-        0: PLUGIN_ADMIN.DISABLED
-      validate:
-        type: bool
+        .smartDashesStyle:
+          type: select
+          size: medium
+          classes: fancy
+          label: PLUGIN_BETTER_TYPOGRAPHY.DASHES_STYLE
+          default: 'international'
+          options:
+            'traditionalUS': PLUGIN_BETTER_TYPOGRAPHY.DASHES_TRADITIONALUS
+            'international': PLUGIN_BETTER_TYPOGRAPHY.DASHES_INTERNATIONAL
 
-    useSmartDiacritics:
-      type: toggle
-      label: PLUGIN_BETTER_TYPOGRAPHY.DIACRITICS
-      help: PLUGIN_BETTER_TYPOGRAPHY.DIACRITICS_HELP
-      highlight: 0
-      default: 0
-      options:
-        1: PLUGIN_ADMIN.ENABLED
-        0: PLUGIN_ADMIN.DISABLED
-      validate:
-        type: bool
+        .applyHyphenations:
+          type: toggle
+          label: PLUGIN_BETTER_TYPOGRAPHY.HYPHENATIONS
+          highlight: 0
+          default: 0
+          options:
+            1: PLUGIN_ADMIN.ENABLED
+            0: PLUGIN_ADMIN.DISABLED
+          validate:
+            type: bool
 
-    smartDiacriticsLanguage:
-      type: select
-      size: medium
-      classes: fancy
-      label: PLUGIN_BETTER_TYPOGRAPHY.DIACRITICS_LANGUAGE
-      default: ''
-      options:
-        '': ''
-        'de-DE': 'de-DE'
-        'en-US': 'en-US'
+        .applyFrenchSpecific:
+          type: toggle
+          label: PLUGIN_BETTER_TYPOGRAPHY.FRENCH
+          help: PLUGIN_BETTER_TYPOGRAPHY.FRENCH_HELP
+          highlight: 0
+          default: 0
+          options:
+            1: PLUGIN_ADMIN.ENABLED
+            0: PLUGIN_ADMIN.DISABLED
+          validate:
+            type: bool
+
+        .useSmartDiacritics:
+          type: toggle
+          label: PLUGIN_BETTER_TYPOGRAPHY.DIACRITICS
+          help: PLUGIN_BETTER_TYPOGRAPHY.DIACRITICS_HELP
+          highlight: 0
+          default: 0
+          options:
+            1: PLUGIN_ADMIN.ENABLED
+            0: PLUGIN_ADMIN.DISABLED
+          validate:
+            type: bool
+
+        .smartDiacriticsLanguage:
+          type: select
+          size: medium
+          classes: fancy
+          label: PLUGIN_BETTER_TYPOGRAPHY.DIACRITICS_LANGUAGE
+          default: ''
+          options:
+            '': ''
+            'de-DE': 'de-DE'
+            'en-US': 'en-US'

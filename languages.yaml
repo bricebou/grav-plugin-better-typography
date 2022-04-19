@@ -1,5 +1,6 @@
 en:
   PLUGIN_BETTER_TYPOGRAPHY:
+    SETTINGS_PER_LANGUAGE : Settings per language
     DIACRITICS: 'Diacritics'
     DIACRITICS_HELP: 'Replace "creme brulee" with "crème brûlée". Only available for de-DE and en-US.'
     DIACRITICS_LANGUAGE: 'Diacritics language'
@@ -16,6 +17,7 @@ en:
 
 fr:
   PLUGIN_BETTER_TYPOGRAPHY:
+    SETTINGS_PER_LANGUAGE: Configuration des langues
     DIACRITICS: 'Diacritiques'
     DIACRITICS_HELP: "Remplacement de \"creme brulee\" par \"crème brûlée\" seulement disponible pour l'anglais US et l'allemand."
     DIACRITICS_LANGUAGE: 'Langue pour les diacritiques'
