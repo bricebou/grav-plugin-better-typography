@@ -3,6 +3,7 @@
 namespace Grav\Plugin;
 
 use Composer\Autoload\ClassLoader;
+use Grav\Common\Grav;
 use Grav\Common\Plugin;
 use PHP_Typography\PHP_Typography;
 use PHP_Typography\Settings;
@@ -76,6 +77,46 @@ class BetterTypographyPlugin extends Plugin
         $this->grav['page']->setRawContent($content);
     }
 
+    /**
+     * languageList
+     *
+     * get all supported languages set in System / Languages
+     *
+     * @return array
+     */
+    public static function languageList(): array
+    {
+        /** @var Grav */
+        $grav = Grav::instance();
+        /** @var Data */
+        $config = $grav['config'];
+
+        $languages = [
+            'default' => 'Default'
+        ];
+
+        foreach ($config->get('system.languages.supported', []) as $language) {
+            $languages[$language] = $language;
+        }
+
+        return $languages;
+    }
+
+    /**
+     * maxLanguages
+     *
+     * @return int
+     */
+    public static function maxLanguages(): int
+    {
+        /** @var Grav */
+        $grav = Grav::instance();
+        /** @var Data */
+        $config = $grav['config'];
+
+        return count($config->get('system.languages.supported', [])) + 1;
+    }
+
 
     /**
     * betterTypo
@@ -86,50 +127,58 @@ class BetterTypographyPlugin extends Plugin
     */
     public function betterTypo(string $string, string $language = null): string
     {
-        $settings = new Settings(true);
+        $PHPTypoSettings = new Settings(true);
 
         if (!$language) {
-            $language = $this->grav['language']->getLanguage();
+            $language = $this->grav['page']->language() ?? $this->grav['language']->getLanguage();
         }
 
-        $useSmartQuotes = $this->config->get('plugins.better-typography.useSmartQuotes', true);
-        $settings->set_smart_quotes($useSmartQuotes);
+        $betterTypoSettings = [];
 
+        foreach ($this->config->get('plugins.better-typography.perLanguageSettings', []) as $perLanguageSettings) {
+            $betterTypoSettings[$perLanguageSettings['language']] = $perLanguageSettings;
+        }
+
+        $betterTypoLanguage = array_key_exists($language, $betterTypoSettings) ? $language : 'default';
+
+        $useSmartQuotes = $betterTypoSettings[$betterTypoLanguage]['useSmartQuotes'] ?? true;
+        $PHPTypoSettings->set_smart_quotes($useSmartQuotes);
         if ($useSmartQuotes) {
-            $settings->set_smart_quotes_primary($this->config->get('plugins.better-typography.smartQuotesStyle', 'doubleCurled'));
-            $settings->set_smart_quotes_secondary($this->config->get('plugins.better-typography.smartQuotesStyleSecondary', 'singleCurled'));
+            $smartQuotesPrimary = $betterTypoSettings[$betterTypoLanguage]['smartQuotesStyle'] ?? 'doubleCurled';
+            $PHPTypoSettings->set_smart_quotes_primary($smartQuotesPrimary);
+            $smartQuotesSecondary = $betterTypoSettings[$betterTypoLanguage]['smartQuotesStyleSecondary'] ?? 'singleCurled';
+            $PHPTypoSettings->set_smart_quotes_secondary($smartQuotesSecondary);
         }
 
-        $useSmartDashes = $this->config->get('plugins.better-typography.useSmartDashes', true);
-        $settings->set_smart_dashes($useSmartDashes);
-
+        $useSmartDashes = $betterTypoSettings[$betterTypoLanguage]['useSmartDashes'] ?? true;
+        $PHPTypoSettings->set_smart_dashes($useSmartDashes);
         if ($useSmartDashes) {
-            $settings->set_smart_dashes_style($this->config->get('plugins.better-typography.dashStyle', 'international'));
+            $smartDashesStyle = $betterTypoSettings[$betterTypoLanguage]['smartDashesStyle'] ?? 'international';
+            $PHPTypoSettings->set_smart_dashes_style($smartDashesStyle);
         }
 
-        $applyHyphenations = $this->config->get('plugins.better-typography.applyHyphenations', false);
-        $settings->set_hyphenation($applyHyphenations);
-
+        $applyHyphenations = $betterTypoSettings[$betterTypoLanguage]['applyHyphenations'] ?? false;
+        $PHPTypoSettings->set_hyphenation($applyHyphenations);
         if ($applyHyphenations) {
-            $settings->set_hyphenation_language($language);
+            $PHPTypoSettings->set_hyphenation_language($language);
         }
 
-        $applyFrenchSpecific = $this->config->get('plugins.better-typography.applyFrenchSpecific', false);
+        $applyFrenchSpecific = $betterTypoSettings[$betterTypoLanguage]['applyFrenchSpecific'] ?? false;
         if ($applyFrenchSpecific && $language === 'fr') {
-            $settings->set_french_punctuation_spacing(true);
-            $settings->set_smart_ordinal_suffix_match_roman_numerals(true);
-            $settings->set_true_no_break_narrow_space(true);
+            $PHPTypoSettings->set_french_punctuation_spacing(true);
+            $PHPTypoSettings->set_smart_ordinal_suffix_match_roman_numerals(true);
+            $PHPTypoSettings->set_true_no_break_narrow_space(true);
         }
 
-        $useSmartDiacritics = $this->config->get('plugins.better-typography.useSmartDiacritics', false);
-
-        if ($useSmartDiacritics && $language === $this->config->get('plugins.better-typography.useSmartDiacritics')) {
-            $settings->set_smart_diacritics(true);
-            $settings->set_diacritic_language($language);
+        $useSmartDiacritics = $betterTypoSettings[$betterTypoLanguage]['useSmartDiacritics'] ?? false;
+        if ($useSmartDiacritics && $language === $betterTypoSettings[$betterTypoLanguage]['smartDiacriticsLanguage']) {
+            $PHPTypoSettings->set_smart_diacritics(true);
+            $PHPTypoSettings->set_diacritic_language($language);
         }
 
-        $typography = new PHP_Typography();
 
-        return $typography->process($string, $settings);
+        $PHPTypo = new PHP_Typography();
+
+        return $PHPTypo->process($string, $PHPTypoSettings);
     }
 }
