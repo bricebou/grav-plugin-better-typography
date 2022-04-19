@@ -167,7 +167,6 @@ class BetterTypographyPlugin extends Plugin
         if ($applyFrenchSpecific && $language === 'fr') {
             $PHPTypoSettings->set_french_punctuation_spacing(true);
             $PHPTypoSettings->set_smart_ordinal_suffix_match_roman_numerals(true);
-            $PHPTypoSettings->set_true_no_break_narrow_space(true);
         }
 
         $useSmartDiacritics = $betterTypoSettings[$betterTypoLanguage]['useSmartDiacritics'] ?? false;
