@@ -1,8 +1,7 @@
 # Better Typography Plugin
 
-**This README.md file should be modified to describe the features, installation, configuration, and general usage of the plugin.**
-
-The **Better Typography** Plugin is an extension for [Grav CMS](http://github.com/getgrav/grav). Automatically improves the typography of your content. Provides a Twig filter.
+The **Better Typography** Plugin is an extension for [Grav CMS](http://github.com/getgrav/grav).
+It automatically improves the typography of your content and provides a Twig filter.
 
 ## Installation
 
@@ -23,7 +22,7 @@ To install the plugin manually, download the zip-version of this repository and 
 You should now have all the plugin files under
 
     /your/site/grav/user/plugins/better-typography
-	
+
 > NOTE: This plugin is a modular component for Grav which may require other plugins to operate, please see its [blueprints.yaml-file on GitHub](https://github.com/bricebou/grav-plugin-better-typography/blob/master/blueprints.yaml).
 
 ### Admin Plugin
@@ -38,19 +37,40 @@ Here is the default configuration and an explanation of available options:
 
 ```yaml
 enabled: true
+perLanguageSettings:
+  -                                           # You can add as many languages as defined as supported language in system.yaml
+    language: default                         #
+    useSmartQuotes: true                      # replace "foo" with &ldquo;foo&rdquo; or &laquo;&nbsp;foo&nbsp;&raquo;... Depends on the selected quoteStyle
+    smartQuotesStyle: doubleCurled            # Style to apply for quotes ; available options are 'doubleCurled' (&ldquo;foo&rdquo;), 'doubleCurledReversed' (&rdquo;foo&rdquo;) 'doubleLow9' (&bdquo;foo&rdquo;), 'doubleLow9Reversed' (&bdquo;foo&ldquo;), 'singleCurled' (&lsquo;foo&rsquo;), 'singleCurledReversed' (&rsquo;foo&rsquo;), 'singleLow9' (&sbquo;foo&rsquo;), 'singleLow9Reversed' (&sbquo;foo&lsquo;), 'doubleGuillemetsFrench' (&laquo;&nbsp;foo&nbsp;&raquo;), 'doubleGuillemets' (&laquo;foo&raquo;), 'doubleGuillemetsReversed' (&raquo;foo&laquo;), 'singleGuillemets' (&lsaquo;foo&rsaquo;), 'singleGuillemetsReversed' (&rsaquo;foo&lsaquo;) 'cornerBrackets' (&#x300c;foo&#x300d;), 'whiteCornerBracket' (&#x300e;foo&#x300f;).
+    smartQuotesStyleSecondary: singleCurled   # same as above for smartQuotesStyle
+    useSmartDashes: true                      # replace -- & --- to en & em dashes, depending on the selected dashStyle
+    smartDashesStyle: international           # 'international' or 'traditionalUS'
+    applyHyphenations: false
+    applyFrenchSpecific: false                # apply specific french typographic rules such as unbreakable space before double punctuation (?, !, :, ;) and XVI<sup>e</sup> siècle
+    useSmartDiacritics: false                 # replace "creme brulee" with "crème brûlée". Only available for de-DE and en-US languages
+    smartDiacriticsLanguage:                  # de-DE or en-US
+
 ```
 
 Note that if you use the Admin Plugin, a file with your configuration named better-typography.yaml will be saved in the `user/config/plugins/`-folder once the configuration is saved in the Admin.
 
 ## Usage
 
-**Describe how to use the plugin.**
+Once configured, the Better Typography will apply typographic improvements onto yout content, based on its language.
+
+The Better TYpography plugin also provides a Twig filter `bettertypo` which can be used in your skeletons:
+
+```twig
+{{ page.header.title|bettertypo }}
+```
+
+You can pass an argument to the `bettertypo` Twig filter :
+
+```twig
+{{ page.header.title|bettertypo('default') }}
+{{ page.header.title|bettertypo('fr') }}
+```
 
 ## Credits
 
-**Did you incorporate third-party code? Want to thank somebody?**
-
-## To Do
-
-- [ ] Future plans, if any
-
+The Better Typography plugin uses the [PHP-Typography library](https://github.com/mundschenk-at/php-typography) released under the GNU General Public License v2.0.

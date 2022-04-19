@@ -8,8 +8,8 @@ author:
   name: Brice Boucard
   email: brice@reclic.dev
 homepage: https://github.com/bricebou/grav-plugin-better-typography
-demo: http://demo.yoursite.com
-keywords: grav, plugin, etc
+demo: https://grav.reclic.dev
+keywords: grav, plugin, typography, content
 bugs: https://github.com/bricebou/grav-plugin-better-typography/issues
 docs: https://github.com/bricebou/grav-plugin-better-typography/blob/develop/README.md
 license: MIT
@@ -106,7 +106,7 @@ form:
       label: PLUGIN_BETTER_TYPOGRAPHY.DASHES_STYLE
       default: 'international'
       options:
-        'traditionalUS': PLUGIN_BETTER_TYPOGRAPHY.DASHES_TRADITIONALUS
+        'traditionalUS': PLUGIN_BETTER_TYPOGRAPHY.DASHES_TRADITIONAL_US
         'international': PLUGIN_BETTER_TYPOGRAPHY.DASHES_INTERNATIONAL
 
     applyHyphenations:
