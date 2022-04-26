@@ -127,7 +127,18 @@ class BetterTypographyPlugin extends Plugin
     */
     public function betterTypo(string $string, string $language = null): string
     {
-        $PHPTypoSettings = new Settings(true);
+        $PHPTypoSettings = new Settings(false);
+        $PHPTypoSettings->set_smart_ordinal_suffix(true);
+        $PHPTypoSettings->set_smart_ellipses(true);
+        $PHPTypoSettings->set_smart_marks(true);
+        $PHPTypoSettings->set_smart_exponents(true);
+        $PHPTypoSettings->set_smart_fractions(true);
+        $PHPTypoSettings->set_smart_area_units(true);
+        $PHPTypoSettings->set_single_character_word_spacing(true);
+        $PHPTypoSettings->set_fraction_spacing(true);
+        $PHPTypoSettings->set_unit_spacing(true);
+        $PHPTypoSettings->set_numbered_abbreviation_spacing(true);
+        $PHPTypoSettings->set_dewidow(true);
 
         if (!$language) {
             $language = $this->grav['page']->language() ?? $this->grav['language']->getLanguage();
