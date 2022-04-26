@@ -58,7 +58,7 @@ class BetterTypographyPlugin extends Plugin
         // Enable the main events we are interested in
         $this->enable([
             // Put your main events here
-            'onPageContentProcessed' => ['onPageContentProcessed', 0],
+            'onPageContentProcessed' => ['onPageContentProcessed', -20],
             'onTwigInitialized' => ['onTwigInitialized', 0]
         ]);
     }
