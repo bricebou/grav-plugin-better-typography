@@ -1,0 +1,83 @@
+{
+    "name": "mundschenk-at/php-typography",
+    "description": "A PHP library for improving your web typography",
+    "type": "library",
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "Peter Putzer",
+            "email": "github@mundschenk.at",
+            "homepage": "https://code.mundschenk.at",
+            "role": "Developer"
+        },
+        {
+            "name": "Jeffrey D. King",
+            "email": "jeff.king@weathersource.com",
+            "homepage": "http://kingdesk.com",
+            "role": "Original author"
+        }
+    ],
+
+    "require": {
+        "php": ">=5.6.0",
+        "ext-pcre": "*",
+        "ext-mbstring": "*",
+        "masterminds/html5": "^2.5.0"
+    },
+    "require-dev": {
+        "ext-curl": "*",
+        "phpunit/phpunit": "5.*||6.*||7.*|8.*|9.*",
+        "brain/monkey": "^2.2.0",
+        "squizlabs/php_codesniffer": "^3",
+        "wp-coding-standards/wpcs": "^2.0",
+        "phpcompatibility/php-compatibility": "^9.0",
+        "dealerdirect/phpcodesniffer-composer-installer": "^0.6",
+        "phpstan/phpstan": "^0.12",
+        "phpbench/phpbench": "^0.17||^1.0@dev",
+        "mundschenk-at/phpunit-cross-version": "dev-master"
+    },
+
+    "autoload": {
+        "classmap": ["src/"]
+    },
+    "autoload-dev": {
+        "classmap": ["tests/"]
+    },
+
+    "bin": [
+        "src/bin/update-patterns.php",
+        "src/bin/update-iana.php"
+    ],
+
+    "scripts": {
+        "post-update-cmd": [
+            "@update-iana"
+        ],
+        "post-install-cmd": [
+            "@update-iana"
+        ],
+        "update-iana": [
+            "php src/bin/update-iana.php"
+        ],
+        "update-patterns": [
+            "php src/bin/update-patterns.php"
+        ],
+        "test": [
+            "phpunit --testsuite PHP-Typography"
+        ],
+        "coverage": [
+            "phpunit --testsuite PHP-Typography --coverage-html tests/coverage"
+        ],
+        "check": [
+            "@phpcs",
+            "@phpstan"
+        ],
+        "phpcs": [
+            "phpcs -p -s src/ tests/ --ignore=tests/perf.php,tests/coverage --extensions=php"
+        ],
+        "phpstan": [
+            "phpstan analyse --configuration=.phpstan.neon --level=7 --ansi src/",
+            "phpstan analyse --configuration=.phpstan.neon --level=6 --ansi tests/"
+        ]
+    }
+}
