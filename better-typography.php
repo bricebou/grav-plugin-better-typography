@@ -142,6 +142,9 @@ class BetterTypographyPlugin extends Plugin
 
         if (!$language) {
             $language = $this->grav['page']->language() ?? $this->grav['language']->getLanguage();
+            if (!$language) {
+                $language = $this->grav['config']->get('site.default_lang');
+            }
         }
 
         $betterTypoSettings = [];
