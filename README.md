@@ -3,6 +3,11 @@
 The **Better Typography** Plugin is an extension for [Grav CMS](http://github.com/getgrav/grav).
 It automatically improves the typography of your content and provides a Twig filter.
 
+## Requirements
+
+- PHP 8.2 or higher (the `mbstring` extension is required)
+- Grav 1.7.40+ or Grav 2.x (compatible with the classic Admin plugin and with Admin2)
+
 ## Installation
 
 Installing the Better Typography plugin can be done in one of three ways: The GPM (Grav Package Manager) installation method lets you quickly install the plugin with a simple terminal command, the manual method lets you do so via a zip file, and the admin method lets you do so via the Admin Plugin.
@@ -48,17 +53,30 @@ perLanguageSettings:
     applyHyphenations: false
     applyFrenchSpecific: false                # apply specific french typographic rules such as unbreakable space before double punctuation (?, !, :, ;) and XVI<sup>e</sup> siècle
     useSmartDiacritics: false                 # replace "creme brulee" with "crème brûlée". Only available for de-DE and en-US languages
-    smartDiacriticsLanguage:                  # de-DE or en-US
+    smartDiacriticsLanguage:                  # de-DE or en-US: the replacement list to use when useSmartDiacritics is enabled
 
 ```
+
+Each entry of `perLanguageSettings` applies to the pages written in that language (`language` must be one of the
+languages declared in `system.languages.supported`). A regional code such as `fr-CA` falls back to the `fr` entry,
+and any language without an entry uses the `default` one.
+
+Notes:
+
+- Code samples are never touched: `<code>`, `<pre>`, `<kbd>`, `<script>`, `<style>`, form controls... keep their content.
+- Hyphenation uses the pattern file matching the page language (`fr`, `de`, `en` → `en-US`...). Languages without
+  patterns are left unhyphenated and a warning is written to the Grav log.
+- Invalid quote or dash style names (for example in a hand-written configuration file) fall back to the default
+  style instead of breaking the page; a warning is written to the Grav log.
 
 Note that if you use the Admin Plugin, a file with your configuration named better-typography.yaml will be saved in the `user/config/plugins/`-folder once the configuration is saved in the Admin.
 
 ## Usage
 
-Once configured, the Better Typography will apply typographic improvements onto yout content, based on its language.
+Once configured, Better Typography applies typographic improvements to the processed content of every page
+(including modular sub-pages and collection items), based on the page language.
 
-The Better TYpography plugin also provides a Twig filter `bettertypo` which can be used in your skeletons:
+The plugin also provides a Twig filter `bettertypo` which can be used in your templates:
 
 ```twig
 {{ page.header.title|bettertypo }}
@@ -70,6 +88,32 @@ You can pass an argument to the `bettertypo` Twig filter :
 {{ page.header.title|bettertypo('default') }}
 {{ page.header.title|bettertypo('fr') }}
 ```
+
+The filter transforms HTML into HTML and its output is marked as *safe* for Twig's auto-escaping: only pass it
+content you trust (page content, headers, translations...), never raw user input such as form submissions.
+
+On Grav 2 the filter is also registered in the Twig content sandbox, so it can be used inside page content when
+`process: { twig: true }` is enabled. Set `twig_first: true` on such pages, otherwise the smart quotes are applied
+before Twig runs and rewrite the quotes inside your Twig expressions. A site can refuse the filter in content with
+`security.twig_sandbox.denied_filters: [bettertypo]`.
+
+## Development
+
+```bash
+composer install          # installs Rector, ECS and PHPStan
+composer check            # rector --dry-run + ecs + phpstan (level 8)
+composer rector           # apply Rector (PHP 8.2 sets, dead code, code quality, type declarations)
+composer ecs              # fix coding style (PSR-12 + common sets)
+composer vendor:release   # re-install vendor/ without dev dependencies before committing it
+```
+
+PHPStan runs without Grav (Grav core is not a Composer dependency of a plugin): `stubs/Plugin.stub` declares
+the parent class `Grav\Common\Plugin` (PHPStan cannot analyse a class whose parent is unknown), and the
+errors caused by the other missing Grav classes are listed in `phpstan-baseline.neon`. Regenerate it with
+`vendor/bin/phpstan analyse --generate-baseline` after changing code that uses the Grav API.
+
+The `vendor/` directory is committed (GPM installs the repository as-is) and must only contain the runtime
+dependencies: run `composer vendor:release` before committing changes to it.
 
 ## Credits
 

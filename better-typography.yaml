@@ -9,5 +9,5 @@ perLanguageSettings:
     smartDashesStyle: international           # 'international' or 'traditionalUS'
     applyHyphenations: false
     applyFrenchSpecific: false                # apply specific french typographic rules such as unbreakable space before double punctuation (?, !, :, ;) and XVI<sup>e</sup> siècle
-    useSmartDiacritics: false                 # replace "creme brulee" with "crème brûlée". Only available for de-DE and en-US languages
-    smartDiacriticsLanguage:                  # de-DE or en-US
+    useSmartDiacritics: false                 # replace "creme brulee" with "crème brûlée". Only available for de-DE and en-US replacement lists
+    smartDiacriticsLanguage:                  # de-DE or en-US: the replacement list to use for this language

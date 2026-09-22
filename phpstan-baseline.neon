@@ -1,2 +1,127 @@
 parameters:
-	ignoreErrors: []
+	ignoreErrors:
+		-
+			message: '#^Access to offset ''filters'' on an unknown class RocketTheme\\Toolbox\\Event\\Event\.$#'
+			identifier: class.notFound
+			count: 2
+			path: better-typography.php
+
+		-
+			message: '#^Access to offset ''language'' on an unknown class Grav\\Common\\Grav\.$#'
+			identifier: class.notFound
+			count: 1
+			path: better-typography.php
+
+		-
+			message: '#^Access to offset ''log'' on an unknown class Grav\\Common\\Grav\.$#'
+			identifier: class.notFound
+			count: 1
+			path: better-typography.php
+
+		-
+			message: '#^Access to offset ''page'' on an unknown class Grav\\Common\\Grav\.$#'
+			identifier: class.notFound
+			count: 1
+			path: better-typography.php
+
+		-
+			message: '#^Access to offset ''page'' on an unknown class RocketTheme\\Toolbox\\Event\\Event\.$#'
+			identifier: class.notFound
+			count: 1
+			path: better-typography.php
+
+		-
+			message: '#^Access to offset ''twig'' on an unknown class Grav\\Common\\Grav\.$#'
+			identifier: class.notFound
+			count: 1
+			path: better-typography.php
+
+		-
+			message: '#^Call to method get\(\) on an unknown class Grav\\Common\\Config\\Config\.$#'
+			identifier: class.notFound
+			count: 3
+			path: better-typography.php
+
+		-
+			message: '#^Call to method getRawContent\(\) on an unknown class Grav\\Common\\Page\\Interfaces\\PageInterface\.$#'
+			identifier: class.notFound
+			count: 1
+			path: better-typography.php
+
+		-
+			message: '#^Call to method language\(\) on an unknown class Grav\\Common\\Page\\Interfaces\\PageInterface\.$#'
+			identifier: class.notFound
+			count: 2
+			path: better-typography.php
+
+		-
+			message: '#^Call to method setRawContent\(\) on an unknown class Grav\\Common\\Page\\Interfaces\\PageInterface\.$#'
+			identifier: class.notFound
+			count: 1
+			path: better-typography.php
+
+		-
+			message: '#^Call to static method instance\(\) on an unknown class Grav\\Common\\Grav\.$#'
+			identifier: class.notFound
+			count: 2
+			path: better-typography.php
+
+		-
+			message: '#^Class Grav\\Common\\Config\\Config not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: better-typography.php
+
+		-
+			message: '#^Class Grav\\Common\\Page\\Interfaces\\PageInterface not found\.$#'
+			identifier: class.notFound
+			count: 2
+			path: better-typography.php
+
+		-
+			message: '#^Class Psr\\Log\\LoggerInterface not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: better-typography.php
+
+		-
+			message: '#^Instantiated class Twig\\TwigFilter not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: better-typography.php
+
+		-
+			message: '#^Method Grav\\Plugin\\BetterTypographyPlugin\:\:pluginConfig\(\) has invalid return type Grav\\Common\\Config\\Config\.$#'
+			identifier: class.notFound
+			count: 1
+			path: better-typography.php
+
+		-
+			message: '#^Parameter \$event of method Grav\\Plugin\\BetterTypographyPlugin\:\:onBuildTwigSandboxPolicy\(\) has invalid type RocketTheme\\Toolbox\\Event\\Event\.$#'
+			identifier: class.notFound
+			count: 1
+			path: better-typography.php
+
+		-
+			message: '#^Parameter \$event of method Grav\\Plugin\\BetterTypographyPlugin\:\:onPageContentProcessed\(\) has invalid type RocketTheme\\Toolbox\\Event\\Event\.$#'
+			identifier: class.notFound
+			count: 1
+			path: better-typography.php
+
+		-
+			message: '#^Call to method warning\(\) on an unknown class Psr\\Log\\LoggerInterface\.$#'
+			identifier: class.notFound
+			count: 1
+			path: classes/Typographer.php
+
+		-
+			message: '#^Parameter \$logger of method Grav\\Plugin\\BetterTypography\\Typographer\:\:__construct\(\) has invalid type Psr\\Log\\LoggerInterface\.$#'
+			identifier: class.notFound
+			count: 1
+			path: classes/Typographer.php
+
+		-
+			message: '#^Property Grav\\Plugin\\BetterTypography\\Typographer\:\:\$logger has unknown class Psr\\Log\\LoggerInterface as its type\.$#'
+			identifier: class.notFound
+			count: 1
+			path: classes/Typographer.php
