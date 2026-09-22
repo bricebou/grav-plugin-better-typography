@@ -22,12 +22,12 @@ use PHP_Typography\Settings\Quote_Style;
  */
 final class Typographer
 {
-    public const DEFAULT_LANGUAGE = 'default';
+    public const string DEFAULT_LANGUAGE = 'default';
 
     /**
      * Grav language codes that have no exact hyphenation pattern file but an obvious best match.
      */
-    private const HYPHENATION_ALIASES = [
+    private const array HYPHENATION_ALIASES = [
         'en' => 'en-US',
         'el' => 'el-Mono',
         'mn' => 'mn-Cyrl',
@@ -60,9 +60,9 @@ final class Typographer
     /**
      * Twig delimiters, protected while the typography runs when Twig is processed after us.
      */
-    private const TWIG_PATTERN = '/\{#.*?#\}|\{%.*?%\}|\{\{.*?\}\}/s';
+    private const string TWIG_PATTERN = '/\{#.*?#\}|\{%.*?%\}|\{\{.*?\}\}/s';
 
-    private const PLACEHOLDER_PATTERN = '/\x{27E6}(\d+)\x{27E7}/u';
+    private const string PLACEHOLDER_PATTERN = '/\x{27E6}(\d+)\x{27E7}/u';
 
     /**
      * @param iterable<mixed>              $perLanguageSettings The raw `perLanguageSettings` list of the plugin configuration.

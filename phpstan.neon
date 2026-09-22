@@ -5,7 +5,7 @@ parameters:
     level: 8
     scanFiles:
         - stubs/Plugin.stub
-    phpVersion: 80200
+    phpVersion: 80300
     paths:
         - better-typography.php
         - classes

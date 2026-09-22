@@ -17,13 +17,13 @@
     }
   ],
   "require": {
-    "php": ">=8.2",
+    "php": ">=8.3",
     "ext-mbstring": "*",
     "mundschenk-at/php-typography": "^7.0"
   },
   "require-dev": {
     "phpstan/phpstan": "^2.2",
-    "phpunit/phpunit": "^11.5",
+    "phpunit/phpunit": "^12.5",
     "rector/rector": "^2.6",
     "symplify/easy-coding-standard": "^13.3"
   },
@@ -37,7 +37,7 @@
   },
   "config": {
     "platform": {
-      "php": "8.2"
+      "php": "8.3"
     },
     "sort-packages": true
   },

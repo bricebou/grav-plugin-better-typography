@@ -14,8 +14,8 @@ return RectorConfig::configure()
     ->withSkip([
         __DIR__ . '/vendor',
     ])
-    ->withPhpVersion(PhpVersion::PHP_82)
-    ->withPhpSets(php82: true)
+    ->withPhpVersion(PhpVersion::PHP_83)
+    ->withPhpSets(php83: true)
     ->withPreparedSets(
         deadCode: true,
         codeQuality: true,
