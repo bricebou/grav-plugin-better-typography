@@ -22,7 +22,7 @@ use Twig\TwigFilter;
  */
 class BetterTypographyPlugin extends Plugin
 {
-    public const FILTER_NAME = 'bettertypo';
+    public const string FILTER_NAME = 'bettertypo';
 
     private ?Typographer $typographer = null;
 

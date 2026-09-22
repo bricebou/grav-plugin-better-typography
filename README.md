@@ -5,8 +5,8 @@ It automatically improves the typography of your content and provides a Twig fil
 
 ## Requirements
 
-- PHP 8.2 or higher (the `mbstring` extension is required)
-- Grav 1.7.40+ or Grav 2.x (compatible with the classic Admin plugin and with Admin2)
+- PHP 8.3 or higher (the `mbstring` extension is required)
+- Grav 1.7.46+ or Grav 2.x (compatible with the classic Admin plugin and with Admin2)
 
 ## Installation
 
@@ -109,7 +109,7 @@ processed, whatever the `twig_first` setting. A site can refuse the filter in co
 composer install          # installs Rector, ECS and PHPStan
 composer check            # rector --dry-run + ecs + phpstan (level 8) + phpunit
 composer test             # PHPUnit tests of the Typographer (tests/)
-composer rector           # apply Rector (PHP 8.2 sets, dead code, code quality, type declarations)
+composer rector           # apply Rector (PHP 8.3 sets, dead code, code quality, type declarations)
 composer ecs              # fix coding style (PSR-12 + common sets)
 composer vendor:release   # re-install vendor/ without dev dependencies before committing it
 ```

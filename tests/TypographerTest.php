@@ -16,9 +16,9 @@ final class TypographerTest extends TestCase
     /**
      * The HTML5 serializer writes U+00A0 as an entity.
      */
-    private const NBSP = '&nbsp;';
+    private const string NBSP = '&nbsp;';
 
-    private const SHY = "\u{00AD}";
+    private const string SHY = "\u{00AD}";
 
     /**
      * @var list<string>
