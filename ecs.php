@@ -10,6 +10,7 @@ return ECSConfig::configure()
     ->withPaths([
         __DIR__ . '/better-typography.php',
         __DIR__ . '/classes',
+        __DIR__ . '/tests',
         __DIR__ . '/rector.php',
         __DIR__ . '/ecs.php',
     ])

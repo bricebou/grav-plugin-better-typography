@@ -9,6 +9,7 @@ return RectorConfig::configure()
     ->withPaths([
         __DIR__ . '/better-typography.php',
         __DIR__ . '/classes',
+        __DIR__ . '/tests',
     ])
     ->withSkip([
         __DIR__ . '/vendor',
