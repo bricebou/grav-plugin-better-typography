@@ -107,7 +107,8 @@ processed, whatever the `twig_first` setting. A site can refuse the filter in co
 
 ```bash
 composer install          # installs Rector, ECS and PHPStan
-composer check            # rector --dry-run + ecs + phpstan (level 8)
+composer check            # rector --dry-run + ecs + phpstan (level 8) + phpunit
+composer test             # PHPUnit tests of the Typographer (tests/)
 composer rector           # apply Rector (PHP 8.2 sets, dead code, code quality, type declarations)
 composer ecs              # fix coding style (PSR-12 + common sets)
 composer vendor:release   # re-install vendor/ without dev dependencies before committing it

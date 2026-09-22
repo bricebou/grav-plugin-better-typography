@@ -9,6 +9,7 @@ parameters:
     paths:
         - better-typography.php
         - classes
+        - tests
     excludePaths:
         analyse:
             - vendor

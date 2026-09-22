@@ -7,6 +7,7 @@
     * Regional language codes (`fr-CA`) fall back to the base language entry (`fr`), then to `default`
     * Hyphenation patterns are resolved from the page language (`en` → `en-US`, `de-AT` → `de`...); unknown languages are skipped with a warning in the Grav log
     * Fix #5: new `singleCharacterWordSpacing` option (`auto`/`enabled`/`disabled`); `auto` no longer glues one-letter words to the next word when the French rules are applied ("à votre service" keeps its space)
+    * PHPUnit test suite for the typography engine (`composer test`)
     * Development tooling: Rector (PHP 8.2 sets), Easy Coding Standard (PSR-12), PHPStan level 8
 2. [](#improved)
     * Requires PHP 8.2+; `mundschenk-at/php-typography` upgraded to 7.0 (`masterminds/html5` 2.11)
