@@ -2,7 +2,7 @@
 /**
  *  This file is part of PHP-Typography.
  *
- *  Copyright 2014-2019 Peter Putzer.
+ *  Copyright 2014-2024 Peter Putzer.
  *  Copyright 2009-2011 KINGdesk, LLC.
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -28,7 +28,6 @@
 namespace PHP_Typography\Fixes\Node_Fixes;
 
 use PHP_Typography\Settings;
-use PHP_Typography\DOM;
 use PHP_Typography\U;
 
 /**
@@ -41,9 +40,9 @@ use PHP_Typography\U;
 class Unit_Spacing_Fix extends Simple_Regex_Replacement_Fix {
 
 	const REPLACEMENT = '$1' . U::NO_BREAK_NARROW_SPACE . '$2';
-	const REGEX       = '/(\d\.?)\s(' . self::_STANDARD_UNITS . ')' . self::WORD_BOUNDARY . '/Sxu';
+	const REGEX       = '/(\d\.?)\s(' . self::STANDARD_UNITS . ')' . self::WORD_BOUNDARY . '/Sxu';
 
-	const _STANDARD_UNITS = '
+	private const STANDARD_UNITS = '
 		### Temporal units
 		(?:ms|s|secs?|mins?|hrs?)\.?|
 		milliseconds?|seconds?|minutes?|hours?|days?|years?|decades?|century|centuries|millennium|millennia|
@@ -86,13 +85,17 @@ class Unit_Spacing_Fix extends Simple_Regex_Replacement_Fix {
 	/**
 	 * Apply the fix to a given textnode.
 	 *
-	 * @param \DOMText $textnode Required.
-	 * @param Settings $settings Required.
-	 * @param bool     $is_title Optional. Default false.
+	 * @since 7.0.0 All parameters are now required.
+	 *
+	 * @param \DOMText $textnode The DOM node.
+	 * @param Settings $settings The settings to apply.
+	 * @param bool     $is_title Indicates if the processed tokens occur in a title/heading context.
+	 *
+	 * @return void
 	 */
-	public function apply( \DOMText $textnode, Settings $settings, $is_title = false ) {
+	public function apply( \DOMText $textnode, Settings $settings, $is_title ) {
 		// Update regex with custom units.
-		$this->regex = "/(\d\.?)\s({$settings->custom_units()}" . self::_STANDARD_UNITS . ')' . self::WORD_BOUNDARY . '/Sxu';
+		$this->regex = "/(\d\.?)\s({$settings->custom_units}" . self::STANDARD_UNITS . ')' . self::WORD_BOUNDARY . '/Sxu';
 
 		parent::apply( $textnode, $settings, $is_title );
 	}

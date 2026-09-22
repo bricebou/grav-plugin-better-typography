@@ -2,7 +2,7 @@
 /**
  *  This file is part of PHP-Typography.
  *
- *  Copyright 2017-2019 Peter Putzer.
+ *  Copyright 2017-2024 Peter Putzer.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -35,13 +35,13 @@ namespace PHP_Typography\Text_Parser;
  *
  * @author Peter Putzer <github@mundschenk.at>
  *
- * @property-read string $value The token value.
- * @property-read int    $type  The token type. Can be any of the following constants:
+ * @property-read string $value   The token value.
+ * @property-read int    $type    The token type. Can be any of the following constants:
  * - Token::SPACE
  * - Token::PUNCTUATION
  * - Token::WORD
  * - Token::OTHER
- * @property-read bool   $mutable Wether the properties of the object can be modified.
+ * @property-read bool   $mutable Whether the properties of the object can be modified.
  */
 final class Token {
 	const SPACE       = 1;
@@ -58,21 +58,21 @@ final class Token {
 	 *
 	 * @var int
 	 */
-	private $type;
+	private int $type;
 
 	/**
 	 * The token value.
 	 *
 	 * @var string
 	 */
-	private $value;
+	private string $value;
 
 	/**
 	 * Ensure that properties can only be set once via the constructor.
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
-	private $mutable = true;
+	private bool $mutable = true;
 
 	/**
 	 * Creates a new token.
@@ -117,8 +117,14 @@ final class Token {
 	 * @return mixed
 	 */
 	public function __get( $property ) {
-		if ( \property_exists( $this, $property ) ) {
-			return $this->$property;
+		switch ( $property ) {
+			case 'type':
+			case 'value':
+			case 'mutable':
+				return $this->{ $property };
+
+			default:
+				return null;
 		}
 	}
 
@@ -132,7 +138,7 @@ final class Token {
 	 * @throws \BadMethodCallException The Token class is immutable.
 	 */
 	public function __set( $id, $val ) {
-		throw new \BadMethodCallException( 'Object of class Text_Parser\Token is immutable.' );
+		throw new \BadMethodCallException( "Object of class Text_Parser\Token is immutable. Cannot set property '$id' to '$val'." );
 	}
 
 	/**
@@ -144,7 +150,7 @@ final class Token {
 	 * @throws \BadMethodCallException The Token class is immutable.
 	 */
 	public function __unset( $id ) {
-		throw new \BadMethodCallException( 'Object of class Text_Parser\Token is immutable.' );
+		throw new \BadMethodCallException( "Object of class Text_Parser\Token is immutable. Cannot unset property '$id'." );
 	}
 
 	/**
@@ -165,5 +171,4 @@ final class Token {
 
 		return $cloned_token;
 	}
-
 }

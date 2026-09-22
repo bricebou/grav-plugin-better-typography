@@ -2,7 +2,7 @@
 /**
  *  This file is part of PHP-Typography.
  *
- *  Copyright 2015-2020 Peter Putzer.
+ *  Copyright 2015-2026 Peter Putzer.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,17 +27,16 @@ namespace PHP_Typography\Tests;
 use PHP_Typography\DOM;
 use PHP_Typography\PHP_Typography;
 use PHP_Typography\Settings;
-use PHP_Typography\Strings;
 use PHP_Typography\U;
 
 use PHP_Typography\Settings\Quote_Style;
 
 use PHP_Typography\Fixes\Default_Registry;
-use PHP_Typography\Fixes\Node_Fix;
-use PHP_Typography\Fixes\Token_Fix;
 use PHP_Typography\Fixes\Registry;
 
 use PHP_Typography\Hyphenator\Cache as Hyphenator_Cache;
+
+use PHP_Typography\Exceptions\Invalid_Path_Exception;
 
 use Mockery as m;
 
@@ -92,6 +91,7 @@ use Mockery as m;
  * @uses PHP_Typography\Fixes\Node_Fixes\Style_Ampersands_Fix
  * @uses PHP_Typography\Fixes\Node_Fixes\Style_Caps_Fix
  * @uses PHP_Typography\Fixes\Node_Fixes\Style_Numbers_Fix
+ * @uses PHP_Typography\Fixes\Node_Fixes\Unicode_Remapping_Fix
  * @uses PHP_Typography\Fixes\Node_Fixes\Unit_Spacing_Fix
  */
 class PHP_Typography_Test extends Testcase {
@@ -193,20 +193,20 @@ class PHP_Typography_Test extends Testcase {
 
 		// Inspect settings.
 		foreach ( $tags_to_ignore as $tag ) {
-			$this->assertContains( $tag, $s['ignoreTags'] );
+			$this->assertContains( $tag, $s->tags_to_ignore );
 		}
 		foreach ( $always_ignore as $tag ) {
-			$this->assertContains( $tag, $s['ignoreTags'] );
+			$this->assertContains( $tag, $s->tags_to_ignore );
 		}
 
 		// Auto-close tag and something else.
 		$s->set_tags_to_ignore( [ 'img', 'foo' ] );
-		$this->assertContains( 'foo', $s['ignoreTags'] );
+		$this->assertContains( 'foo', $s->tags_to_ignore );
 		foreach ( $always_ignore as $tag ) {
-			$this->assertContains( $tag, $s['ignoreTags'] );
+			$this->assertContains( $tag, $s->tags_to_ignore );
 		}
 
-		$s->set_tags_to_ignore( 'img foo  \	' ); // Should not result in an error.
+		$s->set_tags_to_ignore( [ 'img', 'foo', ' \ ' ] ); // Should not result in an error.
 		$s->set_smart_quotes( true );
 		$s->set_smart_quotes_primary();
 		$s->set_smart_quotes_secondary();
@@ -226,10 +226,10 @@ class PHP_Typography_Test extends Testcase {
 	public function test_set_classes_to_ignore() {
 		$s = $this->s;
 
-		$s->set_classes_to_ignore( 'foo bar' );
+		$s->set_classes_to_ignore( [ 'foo', 'bar' ] );
 
-		$this->assertContains( 'foo', $s['ignoreClasses'] );
-		$this->assertContains( 'bar', $s['ignoreClasses'] );
+		$this->assertContains( 'foo', $s->classes_to_ignore );
+		$this->assertContains( 'bar', $s->classes_to_ignore );
 
 		$html = '<p><span class="foo">Ignore this "quote",</span><span class="other"> but not "this" one.</span></p>
 				 <p class="bar">"This" should also be ignored. <span>And "this".</span></p>
@@ -256,10 +256,10 @@ class PHP_Typography_Test extends Testcase {
 	public function test_set_ids_to_ignore() {
 		$s = $this->s;
 
-		$s->set_ids_to_ignore( 'foobar barfoo' );
+		$s->set_ids_to_ignore( [ 'foobar', 'barfoo' ] );
 
-		$this->assertContains( 'foobar', $s['ignoreIDs'] );
-		$this->assertContains( 'barfoo', $s['ignoreIDs'] );
+		$this->assertContains( 'foobar', $s->ids_to_ignore );
+		$this->assertContains( 'barfoo', $s->ids_to_ignore );
 
 		$html = '<p><span id="foobar">Ignore this "quote",</span><span class="other"> but not "this" one.</span></p>
 				 <p id="barfoo">"This" should also be ignored. <span>And "this".</span></p>
@@ -290,8 +290,8 @@ class PHP_Typography_Test extends Testcase {
 	public function test_complete_ignore() {
 		$s = $this->s;
 
-		$s->set_ids_to_ignore( 'foobar barfoo' );
-		$s->set_classes_to_ignore( 'foo bar' );
+		$s->set_ids_to_ignore( [ 'foobar', 'barfoo' ] );
+		$s->set_classes_to_ignore( [ 'foo', 'bar' ] );
 		$s->set_tags_to_ignore( [ 'img', 'foo' ] );
 
 		$html = '<p><span class="foo">Ignore this "quote",</span><span class="other"> but not "this" one.</span></p>
@@ -440,16 +440,10 @@ class PHP_Typography_Test extends Testcase {
 	 * @covers ::get_language_plugin_list
 	 */
 	public function test_get_language_plugin_list_incorrect_path() {
-		// PHP < 7.0 raises an error instead of throwing an "exception".
-		if ( version_compare( phpversion(), '7.0.0', '<' ) ) {
-			$this->expect_warning( \PHPUnit_Framework_Error_Warning::class );
-		} else {
-			$this->expect_warning( \PHPUnit\Framework\Error\Warning::class );
-		}
-
+		$this->expect_exception( Invalid_Path_Exception::class );
 		$this->invoke_static_method( PHP_Typography::class, 'get_language_plugin_list', [ '/does/not/exist' ] );
 
-		$this->assertEmpty( @$this->invoke_static_method( PHP_Typography::class, 'get_language_plugin_list', [ '/does/not/exist' ] ) ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		$this->assertEmpty( $this->invoke_static_method( PHP_Typography::class, 'get_language_plugin_list', [ '/does/not/exist' ] ) );
 	}
 
 	/**
@@ -509,6 +503,8 @@ class PHP_Typography_Test extends Testcase {
 			[ 'Fugen-s', 'Fugen&#8209;s', true ],
 			[ 'ein-, zweimal', 'ein&#8209;, zweimal', true ],
 			[ 'В зависимости от региона, может выращиватся на зерно и силос. После колосовых может выращиватся на второй посев.', 'В зависимости от региона, может выращиватся на зерно и&nbsp;силос. После колосовых может выращиватся на второй посев.', false ],
+			[ '"Text."<br>Text after.', '<span class="pull-double">&ldquo;</span>Text.&rdquo;<br>Text after.', '&ldquo;Text.&rdquo;<br>Text after.' ],
+			[ 'à "l’âge"<sup>N112</sup>', '&agrave; <span class="push-double"></span>&#8203;<span class="pull-double">&ldquo;</span>l&rsquo;&acirc;ge&rdquo;<sup><span class="caps">N<span class="numbers">112</span></span></sup>', '&agrave; &ldquo;l&rsquo;&acirc;ge&rdquo;<sup>N112</sup>' ],
 		];
 	}
 
@@ -576,6 +572,7 @@ class PHP_Typography_Test extends Testcase {
 	 * Test process_textnodes.
 	 *
 	 * @covers ::process_textnodes
+	 * @covers ::process_textnodes_internal
 	 *
 	 * @uses PHP_Typography\Hyphenator
 	 * @uses PHP_Typography\Hyphenator\Trie_Node
@@ -604,6 +601,7 @@ class PHP_Typography_Test extends Testcase {
 	 * Test process_textnodes.
 	 *
 	 * @covers ::process_textnodes
+	 * @covers ::process_textnodes_internal
 	 *
 	 * @uses PHP_Typography\Hyphenator
 	 * @uses PHP_Typography\Hyphenator\Trie_Node
@@ -668,7 +666,7 @@ class PHP_Typography_Test extends Testcase {
 			$this->clean_html(
 				$this->typo->process_textnodes(
 					$html,
-					function ( $node ) {
+					function ( $node ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- callable signature.
 						return 'XXX';
 					},
 					$s
@@ -699,12 +697,7 @@ class PHP_Typography_Test extends Testcase {
 		$s = $this->s;
 		$s->set_defaults();
 
-		// PHP < 7.0 raises an error instead of throwing an "exception".
-		if ( version_compare( phpversion(), '7.0.0', '<' ) ) {
-			$this->expect_exception( \PHPUnit_Framework_Error::class );
-		} else {
-			$this->expect_exception( \TypeError::class );
-		}
+		$this->expect_exception( \TypeError::class );
 
 		$this->typo->process_textnodes( $html, 'bar', $s );
 	}
@@ -744,7 +737,7 @@ class PHP_Typography_Test extends Testcase {
 	 */
 	public function provide_process_with_title_data() {
 		return [
-			[ 'Really...', 'Real&shy;ly&hellip;', 'Really&hellip;', '' ], // processed.
+			[ 'Really...', 'Real&shy;ly&hellip;', 'Really&hellip;', [] ], // processed.
 			[ 'Really...', 'Really...', true, [ 'h1' ] ], // skipped.
 		];
 	}
@@ -816,7 +809,7 @@ class PHP_Typography_Test extends Testcase {
 	/**
 	 * Provide data for testing handle_parsing_errors.
 	 *
-	 * @return [ $errno, $errstr, $errfile, $errline, $errcontext, $result ]
+	 * @return array{ errno : int, errstr : string, errfile : string, errline : int, errcontext : array, result : bool }
 	 */
 	public function provide_handle_parsing_errors() {
 		return [
@@ -844,14 +837,14 @@ class PHP_Typography_Test extends Testcase {
 	public function test_handle_parsing_errors( $errno, $errstr, $errfile, $errline, $errcontext, $result ) {
 
 		if ( $result ) {
-			$this->assertTrue( $this->typo->handle_parsing_errors( $errno, $errstr, $errfile, $errline, $errcontext ) );
+			$this->assertTrue( $this->typo->handle_parsing_errors( $errno, $errstr, $errfile ) );
 		} else {
-			$this->assertFalse( $this->typo->handle_parsing_errors( $errno, $errstr, $errfile, $errline, $errcontext ) );
+			$this->assertFalse( $this->typo->handle_parsing_errors( $errno, $errstr, $errfile ) );
 		}
 
 		// Try again when we are not interested.
 		$old_level = error_reporting( 0 );
-		$this->assertTrue( $this->typo->handle_parsing_errors( $errno, $errstr, $errfile, $errline, $errcontext ) );
+		$this->assertTrue( $this->typo->handle_parsing_errors( $errno, $errstr, $errfile ) );
 		error_reporting( $old_level );
 	}
 
@@ -902,7 +895,7 @@ class PHP_Typography_Test extends Testcase {
 		$this->s->set_smart_quotes( true );
 		$this->s->set_smart_quotes_primary( $primary );
 		$this->s->set_smart_quotes_secondary( $secondary );
-		$this->s->set_true_no_break_narrow_space();
+		$this->s->remap_character( U::NO_BREAK_NARROW_SPACE, U::NO_BREAK_SPACE );
 
 		$this->assertSame( $result, $this->clean_html( $this->typo->process( $html, $this->s ) ) );
 	}
@@ -1024,7 +1017,7 @@ class PHP_Typography_Test extends Testcase {
 	 *
 	 * @dataProvider provide_smart_ellipses_data
 	 *
-	 * @param string $input  HTML intput.
+	 * @param string $input  HTML input.
 	 * @param string $result Expected result.
 	 */
 	public function test_smart_ellipses( $input, $result ) {
@@ -1043,7 +1036,7 @@ class PHP_Typography_Test extends Testcase {
 	 *
 	 * @dataProvider provide_smart_ellipses_data
 	 *
-	 * @param string $input  HTML intput.
+	 * @param string $input  HTML input.
 	 * @param string $result Ignored.
 	 */
 	public function test_smart_ellipses_off( $input, $result ) {
@@ -1130,19 +1123,19 @@ class PHP_Typography_Test extends Testcase {
 	 *
 	 * @dataProvider provide_smart_diacritics_error_in_pattern_data
 	 *
-	 * @param string $html   HTML input.
-	 * @param string $lang   Language code.
-	 * @param string $unset  Replacement to unset.
+	 * @param string $html              HTML input.
+	 * @param string $lang              Language code.
+	 * @param string $unset_replacement Replacement to unset.
 	 */
-	public function test_smart_diacritics_error_in_pattern( $html, $lang, $unset ) {
-
-		$this->s->set_smart_diacritics( true );
-		$this->s->set_diacritic_language( $lang );
+	public function test_smart_diacritics_error_in_pattern( $html, $lang, $unset_replacement ) {
 		$s = $this->s;
 
-		$replacements = $s[ Settings::DIACRITIC_REPLACEMENT_DATA ];
-		unset( $replacements['replacements'][ $unset ] );
-		$s[ Settings::DIACRITIC_REPLACEMENT_DATA ] = $replacements;
+		$s->set_smart_diacritics( true );
+		$s->set_diacritic_language( $lang );
+
+		$settings_data = $this->get_value( $s, 'data' );
+		unset( $settings_data[ Settings::DIACRITIC_REPLACEMENT_DATA ]['replacements'] );
+		$this->set_value( $s, 'data', $settings_data );
 
 		$this->assertSame( $this->clean_html( $html ), $this->clean_html( $this->typo->process( $html, $s, false ) ) );
 	}
@@ -1366,7 +1359,7 @@ class PHP_Typography_Test extends Testcase {
 			]
 		);
 		$this->s->set_smart_fractions( true );
-		$this->s->set_true_no_break_narrow_space( true );
+		$this->s->remap_character( U::NO_BREAK_NARROW_SPACE, U::NO_BREAK_NARROW_SPACE );
 
 		$this->s->set_fraction_spacing( false );
 		$this->assertSame( $result, $this->clean_html( $typo->process( $input, $this->s ) ) );
@@ -1471,7 +1464,7 @@ class PHP_Typography_Test extends Testcase {
 		$this->s->set_smart_quotes( true );
 		$this->s->set_smart_quotes_primary();
 		$this->s->set_smart_quotes_secondary();
-		$this->s->set_true_no_break_narrow_space( true );
+		$this->s->remap_character( U::NO_BREAK_NARROW_SPACE, U::NO_BREAK_NARROW_SPACE );
 		$this->s->set_fraction_spacing( false );
 
 		$this->assertSame( $result, $this->clean_html( $typo->process( $input, $this->s ) ) );
@@ -1857,7 +1850,7 @@ class PHP_Typography_Test extends Testcase {
 	 */
 	public function test_unit_spacing( $input, $result ) {
 		$this->s->set_unit_spacing( true );
-		$this->s->set_true_no_break_narrow_space( true );
+		$this->s->remap_character( U::NO_BREAK_NARROW_SPACE, U::NO_BREAK_NARROW_SPACE );
 
 		$this->assertSame( $result, $this->clean_html( $this->typo->process( $input, $this->s ) ) );
 	}
@@ -1910,7 +1903,7 @@ class PHP_Typography_Test extends Testcase {
 	 */
 	public function test_unit_spacing_dewidow( $input, $result ) {
 		$this->s->set_unit_spacing( true );
-		$this->s->set_true_no_break_narrow_space( true );
+		$this->s->remap_character( U::NO_BREAK_NARROW_SPACE, U::NO_BREAK_NARROW_SPACE );
 		$this->s->set_dewidow( true );
 		$this->s->set_max_dewidow_pull( 10 );
 		$this->s->set_max_dewidow_length( 3 );
@@ -2024,7 +2017,7 @@ class PHP_Typography_Test extends Testcase {
 	 */
 	public function test_french_punctuation_spacing( $input, $result, $use_french_quotes ) {
 		$this->s->set_french_punctuation_spacing( true );
-		$this->s->set_true_no_break_narrow_space( true );
+		$this->s->remap_character( U::NO_BREAK_NARROW_SPACE, U::NO_BREAK_NARROW_SPACE );
 
 		if ( $use_french_quotes ) {
 			$this->s->set_smart_quotes_primary( 'doubleGuillemetsFrench' );
@@ -2275,8 +2268,8 @@ class PHP_Typography_Test extends Testcase {
 			[ 'https://example.org/',                'https://&#8203;example&#8203;.org/',          2 ],
 			[ 'http://example.org/',                 'http://&#8203;example&#8203;.org/',           2 ],
 			[ 'https://my-example.org',              'https://&#8203;my&#8203;-example&#8203;.org', 2 ],
-			[ 'https://example.org/some/long/path/', 'https://&#8203;example&#8203;.org/&#8203;s&#8203;o&#8203;m&#8203;e&#8203;/&#8203;l&#8203;o&#8203;n&#8203;g&#8203;/&#8203;path/', 5 ],
-			[ 'https://example.org:8080/',           'https://&#8203;example&#8203;.org:8080/',     2 ],
+			[ 'https://example.org/some/long/path/', 'https://&#8203;example&#8203;.org/some&#8203;/long&#8203;/path/', 5 ],
+			[ 'https://example.org:8080/',           'https://&#8203;example&#8203;.org&#8203;:8080/',     2 ],
 		];
 	}
 
@@ -2295,7 +2288,7 @@ class PHP_Typography_Test extends Testcase {
 	 * @param int    $min_after Minimum number of characters after URL wrapping.
 	 */
 	public function test_wrap_urls( $input, $result, $min_after ) {
-		$this->s->set_url_wrap( true );
+		$this->s->set_wrap_urls( true );
 		$this->s->set_min_after_url_wrap( $min_after );
 
 		$this->assertSame( $result, $this->clean_html( $this->typo->process( $input, $this->s ) ) );
@@ -2317,7 +2310,7 @@ class PHP_Typography_Test extends Testcase {
 	 * @param int    $min_after  Minimum number of characters after URL wrapping.
 	 */
 	public function test_wrap_urls_off( $html, $result, $min_after ) {
-		$this->s->set_url_wrap( false );
+		$this->s->set_wrap_urls( false );
 		$this->s->set_min_after_url_wrap( $min_after );
 
 		$this->assertSame( $html, $this->typo->process( $html, $this->s ) );
@@ -2350,7 +2343,7 @@ class PHP_Typography_Test extends Testcase {
 	 * @param string $result Expected result.
 	 */
 	public function test_wrap_emails( $html, $result ) {
-		$this->s->set_email_wrap( true );
+		$this->s->set_wrap_emails( true );
 
 		$this->assertSame( $result, $this->clean_html( $this->typo->process( $html, $this->s ) ) );
 	}
@@ -2370,7 +2363,7 @@ class PHP_Typography_Test extends Testcase {
 	 * @param string $result Expected result.
 	 */
 	public function test_wrap_emails_off( $html, $result ) {
-		$this->s->set_email_wrap( false );
+		$this->s->set_wrap_emails( false );
 
 		$this->assertSame( $html, $this->typo->process( $html, $this->s ) );
 	}
@@ -2735,10 +2728,8 @@ class PHP_Typography_Test extends Testcase {
 	public function provide_hyphenate_data() {
 		return [
 			[ 'A few words to hyphenate, like KINGdesk. Really, there should be more hyphenation here!', 'A few words to hy&shy;phen&shy;ate, like KING&shy;desk. Re&shy;al&shy;ly, there should be more hy&shy;phen&shy;ation here!', 'en-US', true, true, true, false ],
-			// Not working with new de pattern file: [ 'Sauerstofffeldflasche', 'Sau&shy;er&shy;stoff&shy;feld&shy;fla&shy;sche', 'de', true, true, true, false ],.
-			[ 'Sauerstofffeldflasche', 'Sauer&shy;stoff&shy;feld&shy;fla&shy;sche', 'de', true, true, true, false ],
-			// Not working with new de pattern file: [ 'Sauerstoff-Feldflasche', 'Sau&shy;er&shy;stoff-Feld&shy;fla&shy;sche', 'de', true, true, true, true ],.
-			[ 'Sauerstoff-Feldflasche', 'Sauer&shy;stoff-Feld&shy;fla&shy;sche', 'de', true, true, true, true ],
+			[ 'Sauerstofffeldflasche', 'Sau&shy;er&shy;stoff&shy;feld&shy;fla&shy;sche', 'de', true, true, true, false ],
+			[ 'Sauerstoff-Feldflasche', 'Sau&shy;er&shy;stoff-Feld&shy;fla&shy;sche', 'de', true, true, true, true ],
 			[ 'Sauerstoff-Feldflasche', 'Sauerstoff-Feldflasche', 'de', true, true, true, false ],
 			[ 'Geschäftsübernahme', 'Ge&shy;sch&auml;fts&shy;&uuml;ber&shy;nah&shy;me', 'de', true, true, true, false ],
 			[ 'Trinkwasserinstallation', 'Trink&shy;was&shy;ser&shy;in&shy;stal&shy;la&shy;ti&shy;on', 'de', true, true, true, false ],
@@ -2768,9 +2759,9 @@ class PHP_Typography_Test extends Testcase {
 	 * @param bool   $hyphenate_headings   Hyphenate headings.
 	 * @param bool   $hyphenate_all_caps   Hyphenate words in ALL caps.
 	 * @param bool   $hyphenate_title_case Hyphenate words in Title Case.
-	 * @param bool   $hyphenate_compunds   Hyphenate compound-words.
+	 * @param bool   $hyphenate_compounds   Hyphenate compound-words.
 	 */
-	public function test_hyphenate_off( $html, $result, $lang, $hyphenate_headings, $hyphenate_all_caps, $hyphenate_title_case, $hyphenate_compunds ) {
+	public function test_hyphenate_off( $html, $result, $lang, $hyphenate_headings, $hyphenate_all_caps, $hyphenate_title_case, $hyphenate_compounds ) {
 		$this->s->set_hyphenation( false );
 		$this->s->set_hyphenation_language( $lang );
 		$this->s->set_min_length_hyphenation( 2 );
@@ -2779,7 +2770,7 @@ class PHP_Typography_Test extends Testcase {
 		$this->s->set_hyphenate_headings( $hyphenate_headings );
 		$this->s->set_hyphenate_all_caps( $hyphenate_all_caps );
 		$this->s->set_hyphenate_title_case( $hyphenate_title_case );
-		$this->s->set_hyphenate_compounds( $hyphenate_compunds );
+		$this->s->set_hyphenate_compounds( $hyphenate_compounds );
 		$this->s->set_hyphenation_exceptions( [ 'KING-desk' ] );
 
 		$this->assertSame( $html, $this->typo->process( $html, $this->s ) );
@@ -2804,9 +2795,9 @@ class PHP_Typography_Test extends Testcase {
 	 * @param bool   $hyphenate_headings   Hyphenate headings.
 	 * @param bool   $hyphenate_all_caps   Hyphenate words in ALL caps.
 	 * @param bool   $hyphenate_title_case Hyphenate words in Title Case.
-	 * @param bool   $hyphenate_compunds   Hyphenate compound-words.
+	 * @param bool   $hyphenate_compounds   Hyphenate compound-words.
 	 */
-	public function test_hyphenate( $html, $result, $lang, $hyphenate_headings, $hyphenate_all_caps, $hyphenate_title_case, $hyphenate_compunds ) {
+	public function test_hyphenate( $html, $result, $lang, $hyphenate_headings, $hyphenate_all_caps, $hyphenate_title_case, $hyphenate_compounds ) {
 		$this->s->set_hyphenation( true );
 		$this->s->set_hyphenation_language( $lang );
 		$this->s->set_min_length_hyphenation( 2 );
@@ -2815,7 +2806,7 @@ class PHP_Typography_Test extends Testcase {
 		$this->s->set_hyphenate_headings( $hyphenate_headings );
 		$this->s->set_hyphenate_all_caps( $hyphenate_all_caps );
 		$this->s->set_hyphenate_title_case( $hyphenate_title_case );
-		$this->s->set_hyphenate_compounds( $hyphenate_compunds );
+		$this->s->set_hyphenate_compounds( $hyphenate_compounds );
 		$this->s->set_hyphenation_exceptions( [ 'KING-desk' ] );
 
 		$this->assertSame( $result, $this->clean_html( $this->typo->process( $html, $this->s ) ) );
@@ -2856,9 +2847,9 @@ class PHP_Typography_Test extends Testcase {
 	 * @param bool   $hyphenate_headings   Hyphenate headings.
 	 * @param bool   $hyphenate_all_caps   Hyphenate words in ALL caps.
 	 * @param bool   $hyphenate_title_case Hyphenate words in Title Case.
-	 * @param bool   $hyphenate_compunds   Hyphenate compound-words.
+	 * @param bool   $hyphenate_compounds   Hyphenate compound-words.
 	 */
-	public function test_hyphenate_with_exceptions( $html, $result, $exceptions, $lang, $hyphenate_headings, $hyphenate_all_caps, $hyphenate_title_case, $hyphenate_compunds ) {
+	public function test_hyphenate_with_exceptions( $html, $result, $exceptions, $lang, $hyphenate_headings, $hyphenate_all_caps, $hyphenate_title_case, $hyphenate_compounds ) {
 		$this->s->set_hyphenation( true );
 		$this->s->set_hyphenation_language( $lang );
 		$this->s->set_min_length_hyphenation( 2 );
@@ -2867,7 +2858,7 @@ class PHP_Typography_Test extends Testcase {
 		$this->s->set_hyphenate_headings( $hyphenate_headings );
 		$this->s->set_hyphenate_all_caps( $hyphenate_all_caps );
 		$this->s->set_hyphenate_title_case( $hyphenate_title_case );
-		$this->s->set_hyphenate_compounds( $hyphenate_compunds );
+		$this->s->set_hyphenate_compounds( $hyphenate_compounds );
 		$this->s->set_hyphenation_exceptions( $exceptions );
 
 		$this->assertSame( $result, $this->clean_html( $this->typo->process( $html, $this->s ) ) );
@@ -2949,8 +2940,10 @@ class PHP_Typography_Test extends Testcase {
 		$this->s->set_hyphenate_title_case( true );
 		$s = $this->s;
 
-		$s['hyphenationPatternExceptions'] = [];
-		unset( $s['hyphenationExceptions'] );
+		$data                                 = $this->get_value( $s, 'data' );
+		$data['hyphenationPatternExceptions'] = [];
+		unset( $data['hyphenationExceptions'] );
+		$this->set_value( $s, 'data', $data );
 
 		$this->assertSame(
 			'A few words to hy&shy;phen&shy;ate, like KINGdesk. Re&shy;al&shy;ly, there should be more hy&shy;phen&shy;ation here!',
@@ -3179,6 +3172,6 @@ class PHP_Typography_Test extends Testcase {
 
 		$reg->shouldReceive( 'update_hyphenator_cache' )->once()->with( $new_cache );
 
-		$this->assertNull( $typo->set_hyphenator_cache( $new_cache ) );
+		$this->assertNull( $typo->set_hyphenator_cache( $new_cache ) ); // @phpstan-ignore-line
 	}
 }

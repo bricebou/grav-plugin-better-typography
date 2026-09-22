@@ -2,7 +2,7 @@
 /**
  *  This file is part of PHP-Typography.
  *
- *  Copyright 2014-2019 Peter Putzer.
+ *  Copyright 2014-2024 Peter Putzer.
  *  Copyright 2009-2011 KINGdesk, LLC.
  *
  *  This program is free software; you can redistribute it and/or modify modify
@@ -27,7 +27,6 @@
 
 namespace PHP_Typography\Fixes\Node_Fixes;
 
-use PHP_Typography\DOM;
 use PHP_Typography\Settings;
 use PHP_Typography\U;
 
@@ -100,19 +99,23 @@ class Dash_Spacing_Fix extends Abstract_Node_Fix {
 	/**
 	 * Apply the fix to a given textnode.
 	 *
-	 * @param \DOMText $textnode Required.
-	 * @param Settings $settings Required.
-	 * @param bool     $is_title Optional. Default false.
+	 * @since 7.0.0 All parameters are now required.
+	 *
+	 * @param \DOMText $textnode The DOM node.
+	 * @param Settings $settings The settings to apply.
+	 * @param bool     $is_title Indicates if the processed tokens occur in a title/heading context.
+	 *
+	 * @return void
 	 */
-	public function apply( \DOMText $textnode, Settings $settings, $is_title = false ) {
-		if ( empty( $settings[ Settings::DASH_SPACING ] ) ) {
+	public function apply( \DOMText $textnode, Settings $settings, $is_title ) {
+		if ( empty( $settings->dash_spacing ) ) {
 			return;
 		}
 
 		// Various special characters and regular expressions.
-		$s = $settings->dash_style();
+		$s = $settings->dash_style;
 
-		if ( $s != $this->cached_dash_style ) { // phpcs:ignore WordPress.PHP.StrictComparisons.LooseComparison -- object value comparison.
+		if ( $s != $this->cached_dash_style ) { // phpcs:ignore Universal.Operators.StrictComparisons.LooseNotEqual -- object value comparison.
 			$this->update_dash_spacing_regex( $s->parenthetical_dash(), $s->parenthetical_space(), $s->interval_dash(), $s->interval_space() );
 			$this->cached_dash_style = $s;
 		}
@@ -120,9 +123,9 @@ class Dash_Spacing_Fix extends Abstract_Node_Fix {
 		// Cache $textnode->data for this fix.
 		$node_data = $textnode->data;
 
-		$node_data = \preg_replace( self::EM_DASH_SPACING,             $this->em_dash_replacement,            $node_data );
-		$node_data = \preg_replace( $this->parenthetical_dash_spacing, $this->parenthetical_dash_replacement, $node_data );
-		$node_data = \preg_replace( $this->interval_dash_spacing,      $this->interval_dash_replacement,      $node_data );
+		$node_data = (string) \preg_replace( self::EM_DASH_SPACING,             $this->em_dash_replacement,            $node_data );
+		$node_data = (string) \preg_replace( $this->parenthetical_dash_spacing, $this->parenthetical_dash_replacement, $node_data );
+		$node_data = (string) \preg_replace( $this->interval_dash_spacing,      $this->interval_dash_replacement,      $node_data );
 
 		// Restore textnode content.
 		$textnode->data = $node_data;
@@ -136,7 +139,7 @@ class Dash_Spacing_Fix extends Abstract_Node_Fix {
 	 * @param string $interval            The dash character used for interval dashes.
 	 * @param string $interval_space      The space character used around interval dashes.
 	 */
-	private function update_dash_spacing_regex( $parenthetical, $parenthetical_space, $interval, $interval_space ) {
+	private function update_dash_spacing_regex( $parenthetical, $parenthetical_space, $interval, $interval_space ): void {
 		// Mandatory UTF-8 modifier.
 		$this->parenthetical_dash_spacing = "/
 			(?:

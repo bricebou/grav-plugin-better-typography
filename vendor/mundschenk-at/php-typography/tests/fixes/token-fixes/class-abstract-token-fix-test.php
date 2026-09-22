@@ -2,7 +2,7 @@
 /**
  *  This file is part of PHP-Typography.
  *
- *  Copyright 2015-2020 Peter Putzer.
+ *  Copyright 2015-2024 Peter Putzer.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@ namespace PHP_Typography\Tests\Fixes\Token_Fixes;
 
 use PHP_Typography\Fixes\Token_Fix;
 use PHP_Typography\Fixes\Token_Fixes;
-use PHP_Typography\Settings;
 
 /**
  * Abstract_Token_Fix unit test.
@@ -48,7 +47,7 @@ class Abstract_Token_Fix_Test extends Token_Fix_Testcase {
 	/**
 	 * Closure to call protected constructors.
 	 *
-	 * @var callable
+	 * @var \Closure
 	 */
 	private $construct_caller;
 
@@ -59,10 +58,9 @@ class Abstract_Token_Fix_Test extends Token_Fix_Testcase {
 	protected function set_up() {
 		parent::set_up();
 
-		$this->construct_caller = function( $target, $feed_compatible ) {
+		$this->construct_caller = function ( $target, $feed_compatible ) {
 			$this->__construct( $target, $feed_compatible );
 		};
-
 	}
 
 	/**

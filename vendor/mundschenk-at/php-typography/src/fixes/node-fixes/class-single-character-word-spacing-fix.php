@@ -2,7 +2,7 @@
 /**
  *  This file is part of PHP-Typography.
  *
- *  Copyright 2017-2019 Peter Putzer.
+ *  Copyright 2017-2024 Peter Putzer.
  *
  *  This program is free software; you can redistribute it and/or modify modify
  *  it under the terms of the GNU General Public License as published by
@@ -54,23 +54,29 @@ class Single_Character_Word_Spacing_Fix extends Abstract_Node_Fix {
 	/**
 	 * Apply the fix to a given textnode.
 	 *
-	 * @param \DOMText $textnode Required.
-	 * @param Settings $settings Required.
-	 * @param bool     $is_title Optional. Default false.
+	 * @since 7.0.0 All parameters are now required.
+	 *
+	 * @param \DOMText $textnode The DOM node.
+	 * @param Settings $settings The settings to apply.
+	 * @param bool     $is_title Indicates if the processed tokens occur in a title/heading context.
+	 *
+	 * @return void
 	 */
-	public function apply( \DOMText $textnode, Settings $settings, $is_title = false ) {
-		if ( empty( $settings[ Settings::SINGLE_CHARACTER_WORD_SPACING ] ) ) {
+	public function apply( \DOMText $textnode, Settings $settings, $is_title ) {
+		if ( empty( $settings->single_character_word_spacing ) ) {
 			return;
 		}
 
 		// Add $next_character and $previous_character for context.
-		$previous_character = DOM::get_prev_chr( $textnode );
-		$next_character     = DOM::get_next_chr( $textnode );
+		$previous_character = DOM::get_previous_character( $textnode );
+		$next_character     = DOM::get_next_character( $textnode );
 		$node_data          = "{$previous_character}{$textnode->data}{$next_character}";
-		$f                  = Strings::functions( $node_data );
+
+		// Check encoding.
+		$f = Strings::functions( $node_data );
 
 		// Replace spaces.
-		$node_data = \preg_replace( self::REGEX . $f['u'], '$1$2' . U::NO_BREAK_SPACE, $node_data );
+		$node_data = (string) \preg_replace( self::REGEX . $f['u'], '$1$2' . U::NO_BREAK_SPACE, $node_data );
 
 		// If we have adjacent characters remove them from the text.
 		$textnode->data = self::remove_adjacent_characters( $node_data, $f['strlen'], $f['substr'], $f['strlen']( $previous_character ), $f['strlen']( $next_character ) );

@@ -2,7 +2,7 @@
 /**
  *  This file is part of PHP-Typography.
  *
- *  Copyright 2017 Peter Putzer.
+ *  Copyright 2017-2024 Peter Putzer.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,25 +27,41 @@
 namespace PHP_Typography\Settings;
 
 /**
- * An interface encapsulating quote styles.
+ * An abstract class encapsulating quote styles.
  *
  * @author Peter Putzer <github@mundschenk.at>
  *
  * @since 5.0.0
+ * @since 7.0.0 Changed to abstract class.
  */
-interface Quotes {
+abstract class Quotes implements \JsonSerializable {
 
 	/**
 	 * Retrieves the styles opening quote characters.
 	 *
 	 * @return string
 	 */
-	public function open();
+	abstract public function open(): string;
 
 	/**
 	 * Retrieves the styles closing quote characters.
 	 *
 	 * @return string
 	 */
-	public function close();
+	abstract public function close(): string;
+
+	/**
+	 * Provides a JSON serialization of the settings.
+	 *
+	 * @since 7.0.0
+	 *
+	 * @return mixed
+	 */
+	#[\ReturnTypeWillChange]
+	public function jsonSerialize() {
+		return [
+			'open'  => $this->open(),
+			'close' => $this->close(),
+		];
+	}
 }

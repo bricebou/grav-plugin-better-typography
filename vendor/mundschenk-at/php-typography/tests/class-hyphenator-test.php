@@ -2,7 +2,7 @@
 /**
  *  This file is part of PHP-Typography.
  *
- *  Copyright 2016-2020 Peter Putzer.
+ *  Copyright 2016-2026 Peter Putzer.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,19 +24,31 @@
 
 namespace PHP_Typography\Tests;
 
+use PHP_Typography\Hyphenator;
+use PHP_Typography\Exceptions\Invalid_Encoding_Exception;
+
+use org\bovigo\vfs\vfsStream;
+
+use Mockery as m;
+
 /**
  * Test Hyphenator class.
  *
  * @coversDefaultClass \PHP_Typography\Hyphenator
  * @usesDefaultClass \PHP_Typography\Hyphenator
  *
- * @uses PHP_Typography\Hyphenator
+ * @uses ::__construct
+ * @uses ::get_object_hash
+ * @uses ::is_odd
+ * @uses ::set_custom_exceptions
+ * @uses ::set_language
+ * @uses PHP_Typography\Hyphenator\Trie_Node
  */
 class Hyphenator_Test extends Testcase {
 	/**
 	 * Hyphenator fixture.
 	 *
-	 * @var \PHP_Typography\Hyphenator
+	 * @var Hyphenator&m::MockInterface
 	 */
 	protected $h;
 
@@ -47,7 +59,22 @@ class Hyphenator_Test extends Testcase {
 	protected function set_up() {
 		parent::set_up();
 
-		$this->h = new \PHP_Typography\Hyphenator();
+		// Set up virtual filesystem.
+		vfsStream::setup(
+			'root',
+			null,
+			[
+				'lang' => [
+					'missing_patterns.json'   => '{ "exceptions": [] }',
+					'invalid_patterns.json'   => '{ "patterns": "foo", "exceptions": [] }',
+					'missing_exceptions.json' => '{ "patterns": [] }',
+					'invalid_exceptions.json' => '{ "patterns": [], "exceptions": "foo" }',
+					'invalid.json'            => 'This is not a JSON file',
+				],
+			]
+		);
+
+		$this->h = m::mock( Hyphenator::class )->shouldAllowMockingProtectedMethods()->makePartial();
 	}
 
 	/**
@@ -55,106 +82,236 @@ class Hyphenator_Test extends Testcase {
 	 *
 	 * @covers ::__construct
 	 *
+	 * @uses ::get_object_hash
+	 * @uses ::set_custom_exceptions
 	 * @uses PHP_Typography\Strings::functions
-	 * @uses PHP_Typography\Strings::mb_str_split
-	 * @uses PHP_Typography\Hyphenator\Trie_Node::__construct
-	 * @uses PHP_Typography\Hyphenator\Trie_Node::build_trie
-	 * @uses PHP_Typography\Hyphenator\Trie_Node::get_node
 	 */
 	public function test_constructor() {
-		$h = $this->h;
+		$lang       = 'en-US';
+		$exceptions = [ 'foo-bar' ];
+		$h          = m::mock( Hyphenator::class )->shouldAllowMockingProtectedMethods()->makePartial();
 
-		$this->assertNotNull( $h );
-		$this->assertInstanceOf( '\PHP_Typography\Hyphenator', $h );
+		$h->shouldReceive( 'set_language' )->once()->with( $lang );
+		$h->shouldReceive( 'set_custom_exceptions' )->once()->with( $exceptions );
 
-		$h2 = new \PHP_Typography\Hyphenator( 'en-US', [ 'foo-bar' ] );
-		$this->assertNotNull( $h2 );
-		$this->assertInstanceOf( '\PHP_Typography\Hyphenator', $h2 );
-		$this->assert_attribute_same( 'en-US', 'language', $h2 );
-		$this->assert_attribute_count( 1, 'custom_exceptions', $h2 );
+		$this->assertNull( $h->__construct( $lang, $exceptions ) );
 	}
 
 	/**
 	 * Tests set_language.
 	 *
 	 * @covers ::set_language
-	 *
-	 * @uses PHP_Typography\Hyphenator\Trie_Node::__construct
-	 * @uses PHP_Typography\Hyphenator\Trie_Node::build_trie
-	 * @uses PHP_Typography\Hyphenator\Trie_Node::get_node
-	 * @uses PHP_Typography\Strings::mb_str_split
 	 */
-	public function test_set_language() {
+	public function test_set_language_success() {
+		$language     = 'language_code';
+		$pattern_file = [
+			'patterns'   => [
+				'_ach' => '00004',
+			],
+			'exceptions' => [
+				'associate' => 'as-so-ciate',
+			],
+		];
+
 		$h = $this->h;
-		$h->set_language( 'en-US' );
-		$this->assert_attribute_not_empty( 'pattern_trie', $h, 'Empty English-US pattern array' );
+		$h->shouldReceive( 'read_patterns_from_file' )->once()->with( m::pattern( "#/lang/$language\.json\$#" ) )->andReturn( $pattern_file );
+
+		$h->set_language( $language );
+
+		$this->assert_attribute_not_empty( 'pattern_trie', $h, 'Empty pattern array' );
+		$this->assert_attribute_not_empty( 'pattern_exceptions', $h, 'Empty pattern exceptions array' );
+	}
+
+	/**
+	 * Tests set_language.
+	 *
+	 * @covers ::set_language
+	 */
+	public function test_set_language_exception() {
+		$language = 'invalid_language_code';
+
+		$h = $this->h;
+		$h->shouldReceive( 'read_patterns_from_file' )->once()->with( m::pattern( "#/lang/$language\.json\$#" ) )->andThrow( \RuntimeException::class );
+
+		$this->expect_exception( \RuntimeException::class );
+
+		$h->set_language( $language );
+
+		$this->assert_attribute_empty( 'pattern_trie', $h, 'Pattern array should be empty' );
+		$this->assert_attribute_empty( 'pattern_exceptions', $h, 'Pattern exceptions array should be empty' );
+	}
+
+	/**
+	 * Tests set_language.
+	 *
+	 * @covers ::set_language
+	 */
+	public function test_set_language_called_twice() {
+		$language     = 'another_language_code';
+		$pattern_file = [
+			'patterns'   => [
+				'_ach' => '00004',
+			],
+			'exceptions' => [
+				'associate' => 'as-so-ciate',
+			],
+		];
+
+		// First call.
+		$h = $this->h;
+		$this->h->shouldReceive( 'read_patterns_from_file' )->once()->with( m::pattern( "#/lang/$language\.json\$#" ) )->andReturn( $pattern_file );
+
+		$h->set_language( $language );
+		$this->assert_attribute_not_empty( 'pattern_trie', $h, 'Empty pattern array' );
 		$this->assert_attribute_not_empty( 'pattern_exceptions', $h, 'Empty pattern exceptions array' );
 
-		$h->set_language( 'foobar' );
-		$this->assert_attribute_empty( 'pattern_trie', $h );
-		$this->assert_attribute_empty( 'pattern_exceptions', $h );
+		// Second call.
+		$this->h->shouldReceive( 'read_patterns_from_file' )->never();
 
-		$h->set_language( 'no' );
-		$this->assert_attribute_not_empty( 'pattern_trie', $h, 'Empty Norwegian pattern array' );
-		$this->assert_attribute_not_empty( 'pattern_exceptions', $h, 'Empty pattern exceptions array' ); // Norwegian has exceptions.
-
-		$h->set_language( 'de' );
-		$this->assert_attribute_not_empty( 'pattern_trie', $h, 'Empty German pattern array' );
-		$this->assert_attribute_empty( 'pattern_exceptions', $h, 'Unexpected pattern exceptions found' ); // no exceptions in the German pattern file.
+		$h->set_language( $language );
+		$this->assert_attribute_not_empty( 'pattern_trie', $h, 'Empty pattern array' );
+		$this->assert_attribute_not_empty( 'pattern_exceptions', $h, 'Empty pattern exceptions array' );
 	}
 
 	/**
-	 * Tests set_language.
+	 * Provides data for testing set_language.
 	 *
-	 * @covers ::set_language
-	 *
-	 * @uses ::set_custom_exceptions
-	 * @uses ::merge_hyphenation_exceptions
-	 * @uses PHP_Typography\Hyphenator\Trie_Node::__construct
-	 * @uses PHP_Typography\Hyphenator\Trie_Node::build_trie
-	 * @uses PHP_Typography\Hyphenator\Trie_Node::get_node
-	 * @uses PHP_Typography\Strings::functions
-	 * @uses PHP_Typography\Strings::mb_str_split
+	 * @return array
 	 */
-	public function test_set_language_with_custom_exceptions() {
-		$h = $this->h;
+	public function provide_read_patterns_from_file_data(): array {
+		$prefix = \dirname( __DIR__ ) . '/src/lang';
 
-		$h->set_custom_exceptions(
+		return \array_map(
+			function ( array $a ) use ( $prefix ): array {
+				return [ "$prefix/$a[0].json", $a[1] ];
+			},
 			[
-				'KINGdesk' => 'KING-desk',
+				[ 'en-US', true ],
+				[ 'no', true ],
+				[ 'de', false ],
 			]
 		);
-		$h->set_language( 'en-US' );
-		$this->invoke_method( $h, 'merge_hyphenation_exceptions', [] );
-		$this->assert_attribute_not_empty( 'pattern_trie', $h, 'Empty pattern array' );
-		$this->assert_attribute_not_empty( 'pattern_exceptions', $h, 'Empty pattern exceptions array' );
-
-		$h->set_language( 'de' );
-		$this->assert_attribute_not_empty( 'pattern_trie', $h, 'Empty pattern array' );
-		$this->assert_attribute_empty( 'pattern_exceptions', $h, 'Unexpected pattern exceptions found' ); // no exceptions in the German pattern file.
 	}
 
 	/**
-	 * Tests set_language.
+	 * Tests read_patterns_from_file.
 	 *
-	 * @covers ::set_language
+	 * @covers ::read_patterns_from_file
 	 *
-	 * @uses PHP_Typography\Hyphenator\Trie_Node::__construct
-	 * @uses PHP_Typography\Hyphenator\Trie_Node::build_trie
-	 * @uses PHP_Typography\Hyphenator\Trie_Node::get_node
-	 * @uses PHP_Typography\Strings::mb_str_split
+	 * @dataProvider provide_read_patterns_from_file_data
+	 *
+	 * @param  string $file              The pattern file.
+	 * @param  bool   $expect_exceptions Whether to expect pattern exceptions.
+	 *
+	 * @return void
 	 */
-	public function test_set_same_hyphenation_language() {
-		$h = $this->h;
+	public function test_read_patterns_from_file( string $file, bool $expect_exceptions ) {
+		$result = $this->h->read_patterns_from_file( $file );
 
-		$h->set_language( 'en-US' );
-		$this->assert_attribute_not_empty( 'pattern_trie', $h, 'Empty pattern array' );
-		$this->assert_attribute_not_empty( 'pattern_exceptions', $h, 'Empty pattern exceptions array' );
+		$this->assertArrayHasKey( 'patterns', $result );
+		$this->assertGreaterThan( 0, count( $result ), 'No hyphenation patterns found.' );
 
-		$h->set_language( 'en-US' );
-		$this->assert_attribute_not_empty( 'pattern_trie', $h, 'Empty pattern array' );
-		$this->assert_attribute_not_empty( 'pattern_exceptions', $h, 'Empty pattern exceptions array' );
+		$this->assertArrayHasKey( 'exceptions', $result );
+		$this->assertIsArray( $result['exceptions'] );
+		if ( $expect_exceptions ) {
+			$this->assertGreaterThan( 0, count( $result['exceptions'] ), 'No pattern exceptions found.' );
+		}
 	}
+
+	/**
+	 * Tests read_patterns_from_file with an invalid JSON.
+	 *
+	 * @covers ::read_patterns_from_file
+	 *
+	 * @return void
+	 */
+	public function test_read_patterns_from_file_invalid_json() {
+		$this->expect_exception_message_matches( '/^Error decoding JSON from language file/' );
+
+		$result = $this->h->read_patterns_from_file( vfsStream::url( 'root/lang/invalid.json' ) );
+
+		$this->assertNull( $result );
+	}
+
+	/**
+	 * Tests read_patterns_from_file with a missing patterns array.
+	 *
+	 * @covers ::read_patterns_from_file
+	 *
+	 * @return void
+	 */
+	public function test_read_patterns_from_file_missing_patterns() {
+		$this->expect_exception_message_matches( '/^Invalid pattern file/' );
+
+		$result = $this->h->read_patterns_from_file( vfsStream::url( 'root/lang/missing_patterns.json' ) );
+
+		$this->assertNull( $result );
+	}
+
+	/**
+	 * Tests read_patterns_from_file with a missing patterns array.
+	 *
+	 * @covers ::read_patterns_from_file
+	 *
+	 * @return void
+	 */
+	public function test_read_patterns_from_file_invalid_patterns() {
+		$this->expect_exception_message_matches( '/^Invalid pattern file/' );
+
+		$result = $this->h->read_patterns_from_file( vfsStream::url( 'root/lang/invalid_patterns.json' ) );
+
+		$this->assertNull( $result );
+	}
+
+	/**
+	 * Tests read_patterns_from_file with a missing exceptions array.
+	 *
+	 * @covers ::read_patterns_from_file
+	 *
+	 * @return void
+	 */
+	public function test_read_patterns_from_file_missing_exceptions() {
+		$result = $this->h->read_patterns_from_file( vfsStream::url( 'root/lang/missing_exceptions.json' ) );
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'patterns', $result );
+		$this->assertIsArray( $result['patterns'] );
+		$this->assertArrayHasKey( 'exceptions', $result );
+		$this->assertIsArray( $result['exceptions'] );
+	}
+
+	/**
+	 * Tests read_patterns_from_file with a missing exceptions array.
+	 *
+	 * @covers ::read_patterns_from_file
+	 *
+	 * @return void
+	 */
+	public function test_read_patterns_from_file_invalid_exceptions() {
+		$result = $this->h->read_patterns_from_file( vfsStream::url( 'root/lang/invalid_exceptions.json' ) );
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'patterns', $result );
+		$this->assertIsArray( $result['patterns'] );
+		$this->assertArrayHasKey( 'exceptions', $result );
+		$this->assertIsArray( $result['exceptions'] );
+	}
+
+	/**
+	 * Tests read_patterns_from_file with a missing patterns array.
+	 *
+	 * @covers ::read_patterns_from_file
+	 *
+	 * @return void
+	 */
+	public function test_read_patterns_from_file_invalid_filename() {
+		$this->expect_exception_message_matches( '/^Could not open language file/' );
+
+		$result = $this->h->read_patterns_from_file( vfsStream::url( 'root/lang/non_existing.json' ) );
+
+		$this->assertNull( $result );
+	}
+
 
 	/**
 	 * Provides data for testing set_custom_exceptions.
@@ -212,24 +369,34 @@ class Hyphenator_Test extends Testcase {
 	 * @covers ::set_custom_exceptions
 	 *
 	 * @uses ::merge_hyphenation_exceptions
-	 * @uses PHP_Typography\Hyphenator\Trie_Node::__construct
-	 * @uses PHP_Typography\Hyphenator\Trie_Node::build_trie
-	 * @uses PHP_Typography\Hyphenator\Trie_Node::get_node
+	 * @uses ::convert_hyphenation_exception_to_pattern
 	 * @uses PHP_Typography\Strings::functions
-	 * @uses PHP_Typography\Strings::mb_str_split
 	 */
 	public function test_set_custom_exceptions_again() {
-		$h          = $this->h;
-		$exceptions = [ 'Hu-go', 'Fö-ba-ß' ];
-		$h->set_custom_exceptions( $exceptions );
-		$h->set_language( 'de' ); // German has no pattern exceptions.
+		$language     = 'language_code';
+		$pattern_file = [
+			'patterns'   => [],
+			'exceptions' => [],
+		];
+
+		// Set initial custom exceptions.
+		$h = $this->h;
+		$h->set_custom_exceptions( [ 'Hu-go', 'Fö-ba-ß' ] );
+
+		$h->shouldReceive( 'read_patterns_from_file' )->once()->with( m::pattern( "#/lang/$language\.json\$#" ) )->andReturn( $pattern_file );
+		$h->set_language( $language ); // No pattern exceptions.
+
+		// Force update of merged exception patterns.
 		$this->invoke_method( $h, 'merge_hyphenation_exceptions', [] );
 		$this->assert_attribute_not_empty( 'merged_exception_patterns', $h );
 
-		$exceptions = [ 'Hu-go' ];
-		$h->set_custom_exceptions( $exceptions );
+		// Set a different set of custom exceptions.
+		$h->set_custom_exceptions( [ 'Hu-go' ] );
+
+		// Assert that the merged exception patterns are reset.
 		$this->assert_attribute_empty( 'merged_exception_patterns', $h );
 
+		// Assert the content of the custom exceptions.
 		$this->assert_attribute_contains_only( 'string', 'custom_exceptions', $h );
 		$this->assert_attribute_contains( 'hu-go', 'custom_exceptions', $h );
 		$this->assert_attribute_count( 1, 'custom_exceptions', $h );
@@ -261,10 +428,8 @@ class Hyphenator_Test extends Testcase {
 	public function provide_hyphenate_data() {
 		return [
 			[ 'A few words to hyphenate like KINGdesk Really there should be more hyphenation here', 'A few words to hy|phen|ate like KING|desk Re|al|ly there should be more hy|phen|ation here', 'en-US', true ], // fake tokenizer doesn't split off punctuation.
-			// Not working with newer de pattern file: [ 'Sauerstofffeldflasche', 'Sau|er|stoff|feld|fla|sche', 'de', true ],.
-			[ 'Sauerstofffeldflasche', 'Sauer|stoff|feld|fla|sche', 'de', true ],
-			// Not working with newer de pattern file: [ 'Sauerstoff Feldflasche', 'Sau|er|stoff Feld|fla|sche', 'de', true ],.
-			[ 'Sauerstoff Feldflasche', 'Sauer|stoff Feld|fla|sche', 'de', true ], // Compound words would not be hyphenated separately.
+			[ 'Sauerstofffeldflasche', 'Sau|er|stoff|feld|fla|sche', 'de', true ],
+			[ 'Sauerstoff Feldflasche', 'Sau|er|stoff Feld|fla|sche', 'de', true ], // Compound words would not be hyphenated separately.
 			[ 'Sauerstoff-Feldflasche', 'Sauerstoff-Feldflasche', 'de', false ],
 			[ 'A', 'A', 'de', true ],
 			[ 'table', 'ta|ble', 'en-US', false ],
@@ -280,9 +445,10 @@ class Hyphenator_Test extends Testcase {
 	 * @covers ::hyphenate_word
 	 * @covers ::lookup_word_pattern
 	 *
-	 * @uses PHP_Typography\Hyphenator\Trie_Node
+	 * @uses ::read_patterns_from_file
+	 * @uses ::convert_hyphenation_exception_to_pattern
+	 * @uses ::merge_hyphenation_exceptions
 	 * @uses PHP_Typography\Text_Parser\Token
-	 * @uses PHP_Typography\Strings::mb_str_split
 	 * @uses PHP_Typography\Strings::functions
 	 *
 	 * @dataProvider provide_hyphenate_data
@@ -323,9 +489,10 @@ class Hyphenator_Test extends Testcase {
 	 * @covers ::hyphenate_word
 	 * @covers ::lookup_word_pattern
 	 *
-	 * @uses PHP_Typography\Hyphenator\Trie_Node
+	 * @uses ::read_patterns_from_file
+	 * @uses ::convert_hyphenation_exception_to_pattern
+	 * @uses ::merge_hyphenation_exceptions
 	 * @uses PHP_Typography\Text_Parser\Token
-	 * @uses PHP_Typography\Strings::mb_str_split
 	 * @uses PHP_Typography\Strings::functions
 	 *
 	 * @dataProvider provide_hyphenate_with_exceptions_data
@@ -351,14 +518,15 @@ class Hyphenator_Test extends Testcase {
 	 * @covers ::hyphenate_word
 	 * @covers ::lookup_word_pattern
 	 *
-	 * @uses PHP_Typography\Hyphenator\Trie_Node
+	 * @uses ::read_patterns_from_file
+	 * @uses ::merge_hyphenation_exceptions
 	 * @uses PHP_Typography\Text_Parser\Token
 	 * @uses PHP_Typography\Strings::functions
-	 * @uses PHP_Typography\Strings::mb_str_split
 	 */
 	public function test_hyphenate_wrong_encoding() {
 		$this->h->set_language( 'de' );
 
+		$this->expect_exception( Invalid_Encoding_Exception::class );
 		$tokens     = $this->tokenize( mb_convert_encoding( 'Änderungsmeldung', 'ISO-8859-2' ) );
 		$hyphenated = $this->h->hyphenate( $tokens, '|', true, 2, 2, 2 );
 		$this->assert_tokens_same( $hyphenated, $tokens, 'Wrong encoding, value should be unchanged.' );
@@ -375,10 +543,10 @@ class Hyphenator_Test extends Testcase {
 	 * @covers ::hyphenate_word
 	 * @covers ::lookup_word_pattern
 	 *
-	 * @uses PHP_Typography\Hyphenator\Trie_Node
+	 * @uses ::read_patterns_from_file
+	 * @uses ::merge_hyphenation_exceptions
 	 * @uses PHP_Typography\Text_Parser\Token
 	 * @uses PHP_Typography\Strings::functions
-	 * @uses PHP_Typography\Strings::mb_str_split
 	 */
 	public function test_hyphenate_no_title_case() {
 		$this->h->set_language( 'de' );
@@ -395,10 +563,9 @@ class Hyphenator_Test extends Testcase {
 	 * @covers ::hyphenate_word
 	 * @covers ::lookup_word_pattern
 	 *
-	 * @uses PHP_Typography\Hyphenator\Trie_Node
+	 * @uses ::read_patterns_from_file
 	 * @uses PHP_Typography\Text_Parser\Token
 	 * @uses PHP_Typography\Strings::functions
-	 * @uses PHP_Typography\Strings::mb_str_split
 	 */
 	public function test_hyphenate_invalid() {
 		$this->h->set_language( 'de' );
@@ -413,10 +580,8 @@ class Hyphenator_Test extends Testcase {
 	 *
 	 * @covers ::lookup_word_pattern
 	 *
-	 * @uses PHP_Typography\Hyphenator\Trie_Node
 	 * @uses PHP_Typography\Text_Parser\Token
 	 * @uses PHP_Typography\Strings::functions
-	 * @uses PHP_Typography\Strings::mb_str_split
 	 */
 	public function test_lookup_word_pattern_invalid_pattern_trie() {
 		$string = 'unknown';
@@ -434,10 +599,11 @@ class Hyphenator_Test extends Testcase {
 	 * @covers ::hyphenate_word
 	 * @covers ::lookup_word_pattern
 	 *
-	 * @uses PHP_Typography\Hyphenator\Trie_Node
+	 * @uses ::read_patterns_from_file
+	 * @uses ::convert_hyphenation_exception_to_pattern
+	 * @uses ::merge_hyphenation_exceptions
 	 * @uses PHP_Typography\Text_Parser\Token
 	 * @uses PHP_Typography\Strings::functions
-	 * @uses PHP_Typography\Strings::mb_str_split
 	 */
 	public function test_hyphenate_no_custom_exceptions() {
 		$this->h->set_language( 'en-US' );
@@ -456,21 +622,19 @@ class Hyphenator_Test extends Testcase {
 	 * @covers ::hyphenate_word
 	 * @covers ::lookup_word_pattern
 	 *
-	 * @uses PHP_Typography\Hyphenator\Trie_Node
+	 * @uses ::read_patterns_from_file
+	 * @uses ::merge_hyphenation_exceptions
 	 * @uses PHP_Typography\Text_Parser\Token
 	 * @uses PHP_Typography\Strings::functions
-	 * @uses PHP_Typography\Strings::mb_str_split
 	 */
 	public function test_hyphenate_no_exceptions_at_all() {
 		$this->h->set_language( 'en-US' );
 
 		// Unset some internal stuff.
-		$ref  = new \ReflectionClass( '\PHP_Typography\Hyphenator' );
+		$ref  = new \ReflectionClass( Hyphenator::class );
 		$prop = $ref->getProperty( 'pattern_exceptions' );
-		$prop->setAccessible( true );
 		$prop->setValue( $this->h, [] );
 		$prop = $ref->getProperty( 'merged_exception_patterns' );
-		$prop->setAccessible( true );
 		$prop->setValue( $this->h, null );
 
 		// Again, no punctuation due to the fake tokenization.
@@ -488,9 +652,8 @@ class Hyphenator_Test extends Testcase {
 	 * @uses PHP_Typography\Strings::functions
 	 */
 	public function test_convert_hyphenation_exception_to_pattern() {
-		$h = $this->h;
-		$this->assertSame( [ 4 => 9 ], $this->invoke_method( $h, 'convert_hyphenation_exception_to_pattern', [ 'KING-desk' ] ) );
-		$this->assertSame( [ 2 => 9 ], $this->invoke_method( $h, 'convert_hyphenation_exception_to_pattern', [ 'ta-ble' ] ) );
+		$this->assertSame( [ 4 => 9 ], $this->invoke_method( $this->h, 'convert_hyphenation_exception_to_pattern', [ 'KING-desk' ] ) );
+		$this->assertSame( [ 2 => 9 ], $this->invoke_method( $this->h, 'convert_hyphenation_exception_to_pattern', [ 'ta-ble' ] ) );
 	}
 
 	/**
@@ -501,10 +664,10 @@ class Hyphenator_Test extends Testcase {
 	 * @uses PHP_Typography\Strings::functions
 	 */
 	public function test_convert_hyphenation_exception_to_pattern_unknown_encoding() {
-		$h         = $this->h;
 		$exception = mb_convert_encoding( 'Fö-ba-ß' , 'ISO-8859-2' );
 
-		$this->assertNull( $this->invoke_method( $h, 'convert_hyphenation_exception_to_pattern', [ $exception ] ) );
+		$this->expect_exception( Invalid_Encoding_Exception::class );
+		$this->assertNull( $this->invoke_method( $this->h, 'convert_hyphenation_exception_to_pattern', [ $exception ] ) );
 	}
 
 	/**
@@ -512,12 +675,18 @@ class Hyphenator_Test extends Testcase {
 	 *
 	 * @covers ::merge_hyphenation_exceptions
 	 *
-	 * @uses PHP_Typography\Hyphenator\Trie_Node
-	 * @uses PHP_Typography\Strings::mb_str_split
+	 * @uses ::read_patterns_from_file
+	 * @uses ::convert_hyphenation_exception_to_pattern
 	 * @uses PHP_Typography\Strings::functions
 	 */
 	public function test_merge_hyphenation_exceptions() {
-		$h = $this->h;
+		$h            = $this->h;
+		$language     = 'fake_language';
+		$pattern_file = [
+			'patterns'   => [],
+			'exceptions' => [ \mb_convert_encoding( 'Fö-ba-ß', 'ISO-8859-2' ) ],
+		];
+
 		$h->set_custom_exceptions( [ 'Hu-go', 'Fä-vi-ken' ] );
 
 		$h->set_language( 'en-US' ); // w/ pattern exceptions.
@@ -534,6 +703,15 @@ class Hyphenator_Test extends Testcase {
 		$this->assert_attribute_array_has_key( 'hugo', 'merged_exception_patterns', $h );
 		$this->assert_attribute_array_has_key( 'fäviken', 'merged_exception_patterns', $h );
 
+		// Simulate a pattern file with invalid encoding in pattern exceptions.
+		$h->shouldReceive( 'read_patterns_from_file' )->once()->with( m::pattern( "#/lang/$language\.json\$#" ) )->andReturn( $pattern_file );
+		$h->set_language( $language ); // No pattern exceptions.
+		$this->invoke_method( $h, 'merge_hyphenation_exceptions', [] );
+		$this->assert_attribute_count( 2, 'merged_exception_patterns', $h );
+		$this->assert_attribute_array_has_key( 'hugo', 'merged_exception_patterns', $h );
+		$this->assert_attribute_array_has_key( 'fäviken', 'merged_exception_patterns', $h );
+		$this->assert_attribute_array_not_has_key( 'föbaß', 'merged_exception_patterns', $h );
+
 		$h->set_language( 'en-US' ); // w/ pattern exceptions.
 		$h->set_custom_exceptions( [] );
 		$this->invoke_method( $h, 'merge_hyphenation_exceptions', [] );
@@ -546,6 +724,15 @@ class Hyphenator_Test extends Testcase {
 		$this->assert_attribute_count( 0, 'merged_exception_patterns', $h );
 		$this->assert_attribute_array_not_has_key( 'hugo', 'merged_exception_patterns', $h );
 		$this->assert_attribute_array_not_has_key( 'fäviken', 'merged_exception_patterns', $h );
+
+		// Simulate a pattern file with invalid encoding in pattern exceptions.
+		$h->shouldReceive( 'read_patterns_from_file' )->once()->with( m::pattern( "#/lang/$language\.json\$#" ) )->andReturn( $pattern_file );
+		$h->set_language( $language ); // No pattern exceptions.
+		$this->invoke_method( $h, 'merge_hyphenation_exceptions', [] );
+		$this->assert_attribute_count( 0, 'merged_exception_patterns', $h );
+		$this->assert_attribute_array_not_has_key( 'hugo', 'merged_exception_patterns', $h );
+		$this->assert_attribute_array_not_has_key( 'fäviken', 'merged_exception_patterns', $h );
+		$this->assert_attribute_array_not_has_key( 'föbaß', 'merged_exception_patterns', $h );
 	}
 
 	/**
@@ -575,9 +762,9 @@ class Hyphenator_Test extends Testcase {
 	 */
 	public function test_is_odd( $number, $result ) {
 		if ( $result ) {
-			$this->assertTrue( $this->invoke_static_method( \PHP_Typography\Hyphenator::class, 'is_odd', [ $number ] ) );
+			$this->assertTrue( $this->invoke_static_method( Hyphenator::class, 'is_odd', [ $number ] ) );
 		} else {
-			$this->assertFalse( $this->invoke_static_method( \PHP_Typography\Hyphenator::class, 'is_odd', [ $number ] ) );
+			$this->assertFalse( $this->invoke_static_method( Hyphenator::class, 'is_odd', [ $number ] ) );
 		}
 	}
 
@@ -587,11 +774,11 @@ class Hyphenator_Test extends Testcase {
 	 * @covers ::get_object_hash
 	 */
 	public function test_get_object_hash() {
-		$hash1 = $this->invoke_static_method( \PHP_Typography\Hyphenator::class, 'get_object_hash', [ 666 ] );
+		$hash1 = $this->invoke_static_method( Hyphenator::class, 'get_object_hash', [ 666 ] );
 		$this->assert_is_string( $hash1 );
 		$this->assertGreaterThan( 0, strlen( $hash1 ) );
 
-		$hash2 = $this->invoke_static_method( \PHP_Typography\Hyphenator::class, 'get_object_hash', [ new \stdClass() ] );
+		$hash2 = $this->invoke_static_method( Hyphenator::class, 'get_object_hash', [ new \stdClass() ] );
 		$this->assert_is_string( $hash2 );
 		$this->assertGreaterThan( 0, strlen( $hash2 ) );
 

@@ -1,7 +1,7 @@
 name: Better Typography
 slug: better-typography
 type: plugin
-version: 0.1.0
+version: 1.0.0
 description: Automatically improves the typography of your content. Provides a Twig filter.
 icon: font
 author:
@@ -11,11 +11,14 @@ homepage: https://github.com/bricebou/grav-plugin-better-typography
 demo: https://grav.reclic.dev
 keywords: grav, plugin, typography, content
 bugs: https://github.com/bricebou/grav-plugin-better-typography/issues
-docs: https://github.com/bricebou/grav-plugin-better-typography/blob/develop/README.md
+docs: https://github.com/bricebou/grav-plugin-better-typography/blob/main/README.md
 license: MIT
 
+compatibility:
+  grav: ['1.7', '2.0']
+
 dependencies:
-  - { name: grav, version: '>=1.7.0' }
+  - { name: grav, version: '>=1.7.40' }
 
 form:
   validation: loose

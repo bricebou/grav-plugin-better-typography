@@ -2,7 +2,7 @@
 /**
  *  This file is part of PHP-Typography.
  *
- *  Copyright 2014-2019 Peter Putzer.
+ *  Copyright 2014-2026 Peter Putzer.
  *  Copyright 2009-2011 KINGdesk, LLC.
  *
  *  This program is free software; you can redistribute it and/or modify modify
@@ -27,7 +27,6 @@
 
 namespace PHP_Typography\Fixes\Node_Fixes;
 
-use PHP_Typography\DOM;
 use PHP_Typography\RE;
 use PHP_Typography\Settings;
 use PHP_Typography\U;
@@ -63,7 +62,7 @@ class Smart_Dashes_Fix extends Abstract_Node_Fix {
 	// Date handling.
 	const DATE_YYYY_MM_DD = '/
 		(
-			(?<=\s|\A|' . U::NO_BREAK_SPACE . ')
+			(?<=\s|\A|[' . U::NO_BREAK_SPACE . '])
 			[12][0-9]{3}
 		)
 		[\-' . U::EN_DASH . ']
@@ -73,7 +72,7 @@ class Smart_Dashes_Fix extends Abstract_Node_Fix {
 		[\-' . U::EN_DASH . "]
 			(
 				(?:[0][1-9]|[12][0-9]|[3][0-1])
-				(?=\s|\Z|\)|\]|\.|\,|\?|\;|\:|\'|\"|\!|" . U::NO_BREAK_SPACE . ')
+				(?=\s|\Z|\)|\]|\.|\,|\?|\;|\:|\'|\"|\!|[" . U::NO_BREAK_SPACE . '])
 		)
 	/xu';
 
@@ -81,7 +80,7 @@ class Smart_Dashes_Fix extends Abstract_Node_Fix {
 		(?:
 			(?:
 				(
-					(?<=\s|\A|' . U::NO_BREAK_SPACE . ')
+					(?<=\s|\A|[' . U::NO_BREAK_SPACE . '])
 					(?:[0]?[1-9]|[1][0-2])
 				)
 				[\-' . U::EN_DASH . ']
@@ -92,7 +91,7 @@ class Smart_Dashes_Fix extends Abstract_Node_Fix {
 			|
 			(?:
 				(
-					(?<=\s|\A|' . U::NO_BREAK_SPACE . ')
+					(?<=\s|\A|[' . U::NO_BREAK_SPACE . '])
 					(?:[0]?[1-9]|[12][0-9]|[3][0-1])
 				)
 				[\-' . U::EN_DASH . ']
@@ -104,13 +103,13 @@ class Smart_Dashes_Fix extends Abstract_Node_Fix {
 		[\-' . U::EN_DASH . "]
 		(
 			[12][0-9]{3}
-			(?=\s|\Z|\)|\]|\.|\,|\?|\;|\:|\'|\"|\!|" . U::NO_BREAK_SPACE . ')
+			(?=\s|\Z|\)|\]|\.|\,|\?|\;|\:|\'|\"|\!|[" . U::NO_BREAK_SPACE . '])
 		)
 	/xu';
 
 	const DATE_YYYY_MM = '/
 		(
-			(?<=\s|\A|' . U::NO_BREAK_SPACE . ')
+			(?<=\s|\A|[' . U::NO_BREAK_SPACE . '])
 			[12][0-9]{3}
 		)
 		[\-' . U::EN_DASH . "]
@@ -120,33 +119,37 @@ class Smart_Dashes_Fix extends Abstract_Node_Fix {
 				|
 				(?:[0][0-9][1-9]|[1-2][0-9]{2}|[3][0-5][0-9]|[3][6][0-6])
 			)
-			(?=\s|\Z|\)|\]|\.|\,|\?|\;|\:|\'|\"|\!|" . U::NO_BREAK_SPACE . ')
+			(?=\s|\Z|\)|\]|\.|\,|\?|\;|\:|\'|\"|\!|[" . U::NO_BREAK_SPACE . '])
 		)
 	/xu';
 
 	/**
 	 * Apply the fix to a given textnode.
 	 *
-	 * @param \DOMText $textnode Required.
-	 * @param Settings $settings Required.
-	 * @param bool     $is_title Optional. Default false.
+	 * @since 7.0.0 All parameters are now required.
+	 *
+	 * @param \DOMText $textnode The DOM node.
+	 * @param Settings $settings The settings to apply.
+	 * @param bool     $is_title Indicates if the processed tokens occur in a title/heading context.
+	 *
+	 * @return void
 	 */
-	public function apply( \DOMText $textnode, Settings $settings, $is_title = false ) {
-		if ( empty( $settings[ Settings::SMART_DASHES ] ) ) {
+	public function apply( \DOMText $textnode, Settings $settings, $is_title ) {
+		if ( empty( $settings->smart_dashes ) ) {
 			return;
 		}
 
 		// Various special characters and regular expressions.
-		$s = $settings->dash_style();
+		$s = $settings->dash_style;
 
 		// Cache textnode content.
 		$node_data = $textnode->data;
 
 		$node_data = \str_replace( '---', U::EM_DASH, $node_data );
-		$node_data = \preg_replace( self::PARENTHETICAL_DOUBLE_DASH, "\$1{$s->parenthetical_dash()}\$2", $node_data );
+		$node_data = (string) \preg_replace( self::PARENTHETICAL_DOUBLE_DASH, "\$1{$s->parenthetical_dash()}\$2", $node_data );
 		$node_data = \str_replace( '--', U::EN_DASH, $node_data );
 
-		$node_data = \preg_replace(
+		$node_data = (string) \preg_replace(
 			[
 				self::PARENTHETICAL_SINGLE_DASH,
 				self::EN_DASH_WORDS,
@@ -168,7 +171,7 @@ class Smart_Dashes_Fix extends Abstract_Node_Fix {
 		$node_data = \str_replace( 'xn' . U::EN_DASH, 'xn--', $node_data );
 
 		// Revert dates back to original formats.
-		$node_data = \preg_replace(
+		$node_data = (string) \preg_replace(
 			[
 				self::DATE_YYYY_MM_DD, // YYYY-MM-DD.
 				self::DATE_MM_DD_YYYY, // MM-DD-YYYY or DD-MM-YYYY.

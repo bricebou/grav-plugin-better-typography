@@ -112,9 +112,8 @@ if (PHP_VERSION_ID < 80000) {
         (function_exists('stream_get_wrappers') && in_array('phpvfscomposer', stream_get_wrappers(), true))
         || (function_exists('stream_wrapper_register') && stream_wrapper_register('phpvfscomposer', 'Composer\BinProxyWrapper'))
     ) {
-        include("phpvfscomposer://" . __DIR__ . '/..'.'/mundschenk-at/php-typography/src/bin/update-patterns.php');
-        exit(0);
+        return include("phpvfscomposer://" . __DIR__ . '/..'.'/mundschenk-at/php-typography/src/bin/update-patterns.php');
     }
 }
 
-include __DIR__ . '/..'.'/mundschenk-at/php-typography/src/bin/update-patterns.php';
+return include __DIR__ . '/..'.'/mundschenk-at/php-typography/src/bin/update-patterns.php';

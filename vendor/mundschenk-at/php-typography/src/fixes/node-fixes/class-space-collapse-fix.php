@@ -2,7 +2,7 @@
 /**
  *  This file is part of PHP-Typography.
  *
- *  Copyright 2014-2019 Peter Putzer.
+ *  Copyright 2014-2026 Peter Putzer.
  *  Copyright 2009-2011 KINGdesk, LLC.
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -30,7 +30,6 @@ namespace PHP_Typography\Fixes\Node_Fixes;
 use PHP_Typography\DOM;
 use PHP_Typography\RE;
 use PHP_Typography\Settings;
-use PHP_Typography\Strings;
 use PHP_Typography\U;
 
 /**
@@ -43,19 +42,23 @@ use PHP_Typography\U;
 class Space_Collapse_Fix extends Abstract_Node_Fix {
 
 	const COLLAPSE_NORMAL_SPACES            = '/[' . RE::NORMAL_SPACES . ']+/Sxu';
-	const COLLAPSE_NON_BREAKABLE_SPACES     = '/(?:[' . RE::NORMAL_SPACES . ']|' . RE::HTML_SPACES . ')*' . U::NO_BREAK_SPACE . '(?:[' . RE::NORMAL_SPACES . ']|' . RE::HTML_SPACES . ')*/Sxu';
+	const COLLAPSE_NON_BREAKABLE_SPACES     = '/(?:[' . RE::NORMAL_SPACES . ']|' . RE::HTML_SPACES . ')*[' . U::NO_BREAK_SPACE . '](?:[' . RE::NORMAL_SPACES . ']|' . RE::HTML_SPACES . ')*/Sxu';
 	const COLLAPSE_OTHER_SPACES             = '/(?:[' . RE::NORMAL_SPACES . '])*(' . RE::HTML_SPACES . ')(?:[' . RE::NORMAL_SPACES . ']|' . RE::HTML_SPACES . ')*/Sxu';
 	const COLLAPSE_SPACES_AT_START_OF_BLOCK = '/\A(?:[' . RE::NORMAL_SPACES . ']|' . RE::HTML_SPACES . ')+/Sxu';
 
 	/**
 	 * Apply the fix to a given textnode.
 	 *
-	 * @param \DOMText $textnode Required.
-	 * @param Settings $settings Required.
-	 * @param bool     $is_title Optional. Default false.
+	 * @since 7.0.0 All parameters are now required.
+	 *
+	 * @param \DOMText $textnode The DOM node.
+	 * @param Settings $settings The settings to apply.
+	 * @param bool     $is_title Indicates if the processed tokens occur in a title/heading context.
+	 *
+	 * @return void
 	 */
-	public function apply( \DOMText $textnode, Settings $settings, $is_title = false ) {
-		if ( empty( $settings[ Settings::SPACE_COLLAPSE ] ) ) {
+	public function apply( \DOMText $textnode, Settings $settings, $is_title ) {
+		if ( empty( $settings->space_collapse ) ) {
 			return;
 		}
 
@@ -63,13 +66,13 @@ class Space_Collapse_Fix extends Abstract_Node_Fix {
 		$node_data = $textnode->data;
 
 		// Replace spaces.
-		$node_data = \preg_replace(
+		$node_data = (string) \preg_replace(
 			[
 				// Normal spacing.
 				self::COLLAPSE_NORMAL_SPACES,
 				// Non-breakable space get's priority. If non-breakable space exists in a string of spaces, it collapses to a single non-breakable space.
 				self::COLLAPSE_NON_BREAKABLE_SPACES,
-				// For any other spaceing, replace with the first occurance of an unusual space character.
+				// For any other spaceing, replace with the first occurrence of an unusual space character.
 				self::COLLAPSE_OTHER_SPACES,
 			],
 			[ // @codeCoverageIgnoreStart
@@ -81,8 +84,8 @@ class Space_Collapse_Fix extends Abstract_Node_Fix {
 		);
 
 		// Remove all spacing at beginning of block level elements.
-		if ( null === DOM::get_previous_textnode( $textnode ) ) {
-			$node_data = \preg_replace( self::COLLAPSE_SPACES_AT_START_OF_BLOCK, '', $node_data );
+		if ( DOM::get_first_textnode( $textnode ) === $textnode ) {
+			$node_data = (string) \preg_replace( self::COLLAPSE_SPACES_AT_START_OF_BLOCK, '', $node_data );
 		}
 
 		// Restore textnode content.

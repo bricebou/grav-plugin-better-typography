@@ -2,7 +2,7 @@
 /**
  *  This file is part of PHP-Typography.
  *
- *  Copyright 2014-2019 Peter Putzer.
+ *  Copyright 2014-2024 Peter Putzer.
  *  Copyright 2009-2011 KINGdesk, LLC.
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -29,28 +29,51 @@ namespace PHP_Typography;
 
 use Masterminds\HTML5\Elements;
 
+use DOMNodeList;
+use DOMNode;
+use DOMElement;
+use DOMText;
+
 /**
  * Some static methods for DOM manipulation.
  *
  * @since 4.2.0
+ * @since 7.0.0 The obsolete and/or unused methods `get_block_parent_name`, `get_previous_textnode`,
+ *              `get_next_textnode`, and `get_last_textnode` have been removed.
  */
 abstract class DOM {
 
 	/**
-	 * An array of block tag names.
+	 * A flipped array of block tag names. Checked via isset/has_key.
 	 *
-	 * @var array
+	 * @var array<string,int>
 	 */
-	private static $block_tags;
+	private static array $block_tags;
 
 	/**
-	 * An array of tags that should never be modified.
+	 * A flipped array of tags that should never be modified. Checked via isset/has_key.
 	 *
-	 * @var array
+	 * @var array<string,int>
 	 */
-	private static $inappropriate_tags;
+	private static array $inappropriate_tags;
 
-	const ADDITIONAL_INAPPROPRIATE_TAGS = [
+	/**
+	 * Block tags not included as such in the current HTML5-PHP version.
+	 *
+	 * @since 7.0.0
+	 */
+	private const ADDITIONAL_BLOCK_TAGS = [
+		'li',
+		'td',
+		'dt',
+	];
+
+	/**
+	 * Tags that should never be modified.
+	 *
+	 * @since 5.2.0
+	 */
+	private const ADDITIONAL_INAPPROPRIATE_TAGS = [
 		'button',
 		'select',
 		'optgroup',
@@ -64,28 +87,39 @@ abstract class DOM {
 	];
 
 	/**
+	 * Elements that are acceptable as neighbor nodes.
+	 *
+	 * @since 7.0.0
+	 */
+	private const ACCEPTABLE_NEIGHBOR_ELEMENTS = [
+		'br'  => true,
+		'sub' => true,
+		'sup' => true,
+	];
+
+	/**
 	 * Retrieves an array of block tags.
 	 *
 	 * @param bool $reset Optional. Default false.
 	 *
-	 * @return array {
-	 *         An array of boolean values indexed by tagname.
+	 * @return array<string,int> {
+	 *         An array of integer values indexed by tagname.
 	 *
-	 *         @type bool $tag `true` if the tag is a block tag.
+	 *         @type int $tag Only the existence of the $tag key is relevant.
 	 * }
 	 */
-	public static function block_tags( $reset = false ) {
+	public static function block_tags( bool $reset = false ): array {
 		if ( empty( self::$block_tags ) || $reset ) {
-			self::$block_tags = \array_merge(
-				\array_flip(
+			self::$block_tags = \array_flip(
+				\array_merge(
 					\array_filter(
 						\array_keys( Elements::$html5 ),
-						function( $tag ) {
+						function ( $tag ) {
 							return Elements::isA( $tag, Elements::BLOCK_TAG );
 						}
-					)
-				),
-				\array_flip( [ 'li', 'td', 'dt' ] ) // not included as "block tags" in current HTML5-PHP version.
+					),
+					self::ADDITIONAL_BLOCK_TAGS
+				)
 			);
 		}
 
@@ -97,19 +131,19 @@ abstract class DOM {
 	 *
 	 * @param bool $reset Optional. Default false.
 	 *
-	 * @return array {
+	 * @return array<string,int> {
 	 *         An array of boolean values indexed by tagname.
 	 *
-	 *         @type bool $tag `true` if the tag should never be modified in any way.
+	 *         @type int $tag Only the existence of the $tag key is relevant.
 	 * }
 	 */
-	public static function inappropriate_tags( $reset = false ) {
+	public static function inappropriate_tags( bool $reset = false ): array {
 		if ( empty( self::$inappropriate_tags ) || $reset ) {
 			self::$inappropriate_tags = \array_flip(
 				\array_merge(
 					\array_filter(
 						\array_keys( Elements::$html5 ),
-						function( $tag ) {
+						function ( $tag ) {
 							return Elements::isA( $tag, Elements::VOID_TAG )
 								|| Elements::isA( $tag, Elements::TEXT_RAW )
 								|| Elements::isA( $tag, Elements::TEXT_RCDATA );
@@ -124,16 +158,20 @@ abstract class DOM {
 	}
 
 	/**
-	 * Converts \DOMNodeList to array;
+	 * Converts a DOMNodeList to array.
 	 *
-	 * @param \DOMNodeList $list Required.
+	 * @since 7.0.0 The Parameter $list has been renamed to $node_list.
 	 *
-	 * @return array An associative array in the form ( $spl_object_hash => $node ).
+	 * @param DOMNodeList $node_list Required.
+	 *
+	 * @return array<string,DOMNode> An associative array in the form ( $spl_object_hash => $node ).
+	 *
+	 * @phpstan-param DOMNodeList<DOMNode> $node_list
 	 */
-	public static function nodelist_to_array( \DOMNodeList $list ) {
+	public static function nodelist_to_array( DOMNodeList $node_list ): array {
 		$out = [];
 
-		foreach ( $list as $node ) {
+		foreach ( $node_list as $node ) {
 			$out[ \spl_object_hash( $node ) ] = $node;
 		}
 
@@ -142,16 +180,16 @@ abstract class DOM {
 
 	/**
 	 * Retrieves an array containing all the ancestors of the node. This could be done
-	 * via an XPath query for "ancestor::*", but DOM walking is in all likelyhood faster.
+	 * via an XPath query for "ancestor::*", but DOM walking is in all likelihood faster.
 	 *
-	 * @param \DOMNode $node Required.
+	 * @param DOMNode $node Required.
 	 *
-	 * @return array An array of \DOMNode.
+	 * @return DOMNode[] An array of DOMNode.
 	 */
-	public static function get_ancestors( \DOMNode $node ) {
+	public static function get_ancestors( DOMNode $node ): array {
 		$result = [];
 
-		while ( ( $node = $node->parentNode ) && ( $node instanceof \DOMElement ) ) { // phpcs:ignore WordPress.CodeAnalysis.AssignmentInCondition.FoundInWhileCondition
+		while ( ( $node = $node->parentNode ) && ( $node instanceof DOMElement ) ) { // phpcs:ignore Generic.CodeAnalysis.AssignmentInCondition.FoundInWhileCondition
 			$result[] = $node;
 		}
 
@@ -159,21 +197,21 @@ abstract class DOM {
 	}
 
 	/**
-	 * Checks whether the \DOMNode has one of the given classes.
-	 * If $tag is a \DOMText, the parent DOMElement is checked instead.
+	 * Checks whether the DOMNode has one of the given classes.
+	 * If $tag is a DOMText, the parent DOMElement is checked instead.
 	 *
-	 * @param \DOMNode     $tag        An element or textnode.
-	 * @param string|array $classnames A single classname or an array of classnames.
+	 * @param DOMNode         $tag        An element or textnode.
+	 * @param string|string[] $classnames A single classname or an array of classnames.
 	 *
 	 * @return bool True if the element has any of the given class(es).
 	 */
-	public static function has_class( \DOMNode $tag, $classnames ) {
-		if ( $tag instanceof \DOMText ) {
+	public static function has_class( DOMNode $tag, $classnames ): bool {
+		if ( $tag instanceof DOMText ) {
 			$tag = $tag->parentNode;
 		}
 
 		// Bail if we are not working with a tag or if there is no classname.
-		if ( ! ( $tag instanceof \DOMElement ) || empty( $classnames ) ) {
+		if ( ! ( $tag instanceof DOMElement ) || empty( $classnames ) ) {
 			return false;
 		}
 
@@ -196,66 +234,88 @@ abstract class DOM {
 	}
 
 	/**
-	 * Retrieves the last character of the previous \DOMText sibling (if there is one).
+	 * Retrieves the last character of the previous DOMText sibling (if there is one).
 	 *
-	 * @param \DOMNode $node The content node.
+	 * @since 7.0.0 Renamed to `get_previous_character`.
 	 *
-	 * @return string A single character (or the empty string).
-	 */
-	public static function get_prev_chr( \DOMNode $node ) {
-		return self::get_adjacent_chr( $node, -1, 1, [ __CLASS__, 'get_previous_textnode' ] );
-	}
-
-	/**
-	 * Retrieves the first character of the next \DOMText sibling (if there is one).
-	 *
-	 * @param \DOMNode $node The content node.
+	 * @param DOMNode $node The content node.
 	 *
 	 * @return string A single character (or the empty string).
 	 */
-	public static function get_next_chr( \DOMNode $node ) {
-		return self::get_adjacent_chr( $node, 0, 1, [ __CLASS__, 'get_next_textnode' ] );
+	public static function get_previous_character( DOMNode $node ): string {
+		return self::get_adjacent_character( $node, -1, [ __CLASS__, 'get_previous_acceptable_node' ] );
 	}
 
 	/**
-	 * Retrieves a character from the given \DOMNode.
+	 * Retrieves the first character of the next DOMText sibling (if there is one).
+	 *
+	 * @since 7.0.0 Renamed to `get_next_character`.
+	 *
+	 * @param DOMNode $node The content node.
+	 *
+	 * @return string A single character (or the empty string).
+	 */
+	public static function get_next_character( DOMNode $node ): string {
+		return self::get_adjacent_character( $node, 0, [ __CLASS__, 'get_next_acceptable_node' ] );
+	}
+
+	/**
+	 * Retrieves a character from the given DOMNode.
 	 *
 	 * @since 5.0.0
+	 * @since 7.0.0 Renamed to `get_adjacent_character`. Parameter `$get_textnode` renamed to `$get_node` and
+	 *              obsolete parameter `$length` removed.
 	 *
-	 * @param  \DOMNode $node         Required.
-	 * @param  int      $position     The position parameter for `substr`.
-	 * @param  int      $length       The length parameter for `substr`.
-	 * @param  callable $get_textnode A function to retrieve the \DOMText from the node.
+	 * @param  DOMNode  $node     The starting node.
+	 * @param  int      $position The position parameter for `substr`.
+	 * @param  callable $get_node A function to retrieve the adjacent node from the starting node.
 	 *
 	 * @return string The character or an empty string.
 	 */
-	private static function get_adjacent_chr( \DOMNode $node, $position, $length, callable $get_textnode ) {
-		$textnode = $get_textnode( $node );
+	private static function get_adjacent_character( DOMNode $node, int $position, callable $get_node ): string {
+		$character     = '';
+		$adjacent_node = $get_node(
+			// Determines if the node is a textnode or one of the acceptable elements.
+			function ( ?DOMNode $n ): bool {
+				return $n instanceof DOMText || ( $n instanceof DOMElement && isset( self::ACCEPTABLE_NEIGHBOR_ELEMENTS[ $n->tagName ] ) );
+			},
+			$node
+		);
 
-		if ( isset( $textnode ) && isset( $textnode->data ) ) {
-			// Determine encoding.
-			$func = Strings::functions( $textnode->data );
-
-			if ( ! empty( $func ) ) {
-				return \preg_replace( '/\p{C}/Su', '', $func['substr']( $textnode->data, $position, $length ) );
+		if ( null !== $adjacent_node ) {
+			if ( $adjacent_node instanceof DOMElement ) {
+				switch ( $adjacent_node->tagName ) {
+					case 'br':
+						$character = ' ';
+						break;
+					case 'sub':
+					case 'sup':
+					default:
+						$character = '';
+				}
+			} elseif ( $adjacent_node instanceof DOMText ) {
+				$node_data = $adjacent_node->data;
+				$character = \preg_replace( '/\p{C}/Su', '', Strings::functions( $node_data )['substr']( $node_data, $position, 1 ) );
 			}
 		}
 
-		return '';
+		return $character;
 	}
 
 	/**
-	 * Retrieves the previous \DOMText sibling (if there is one).
+	 * Retrieves the previous acceptable sibling (if there is one).
 	 *
-	 * @param \DOMNode|null $node Optional. The content node. Default null.
+	 * @param  callable $is_acceptable Returns true if the \DOMnode is acceptable.
+	 * @param  ?DOMNode $node          Optional. The content node. Default null.
 	 *
-	 * @return \DOMText|null Null if $node is a block-level element or no text sibling exists.
+	 * @return DOMNode|null Null if $node is a block-level element or no text sibling exists.
 	 */
-	public static function get_previous_textnode( \DOMNode $node = null ) {
-		return self::get_adjacent_textnode(
-			function( &$another_node = null ) {
-				$another_node = $another_node->previousSibling;
-				return self::get_last_textnode( $another_node );
+	public static function get_previous_acceptable_node( callable $is_acceptable, ?DOMNode $node ): ?DOMNode {
+		return self::get_adjacent_node(
+			$is_acceptable,
+			function ( callable $is_node_acceptable, DOMNode &$another_node ): ?DOMNode {
+				$another_node = $another_node->previousSibling ?? null;
+				return self::get_last_acceptable_node( $is_node_acceptable, $another_node );
 			},
 			[ __CLASS__, __FUNCTION__ ],
 			$node
@@ -263,17 +323,19 @@ abstract class DOM {
 	}
 
 	/**
-	 * Retrieves the next \DOMText sibling (if there is one).
+	 * Retrieves the next acceptable sibling (if there is one).
 	 *
-	 * @param \DOMNode|null $node Optional. The content node. Default null.
+	 * @param  callable $is_acceptable Returns true if the \DOMnode is acceptable.
+	 * @param  ?DOMNode $node          Optional. The content node. Default null.
 	 *
-	 * @return \DOMText|null Null if $node is a block-level element or no text sibling exists.
+	 * @return DOMNode|null Null if $node is a block-level element or no text sibling exists.
 	 */
-	public static function get_next_textnode( \DOMNode $node = null ) {
-		return self::get_adjacent_textnode(
-			function( &$another_node = null ) {
+	public static function get_next_acceptable_node( callable $is_acceptable, ?DOMNode $node ): ?DOMNode {
+		return self::get_adjacent_node(
+			$is_acceptable,
+			function ( callable $is_node_acceptable, DOMNode &$another_node ): ?DOMNode {
 				$another_node = $another_node->nextSibling;
-				return self::get_first_textnode( $another_node );
+				return self::get_first_acceptable_node( $is_node_acceptable, $another_node );
 			},
 			[ __CLASS__, __FUNCTION__ ],
 			$node
@@ -281,17 +343,19 @@ abstract class DOM {
 	}
 
 	/**
-	 * Retrieves an adjacent \DOMText sibling if there is one.
+	 * Retrieves an adjacent acceptable sibling if there is one.
 	 *
 	 * @since 5.0.0
+	 * @since 7.0.0 Renamed to `get_adjacent_node` and refactored to take a callable to determine acceptable nodes.
 	 *
-	 * @param callable      $iterate             Takes a reference \DOMElement and returns a \DOMText (or null).
-	 * @param callable      $get_adjacent_parent Takes a single \DOMElement parameter and returns a \DOMText (or null).
-	 * @param \DOMNode|null $node                Optional. The content node. Default null.
+	 * @param  callable $is_acceptable       Returns true if the \DOMnode is acceptable.
+	 * @param  callable $iterate             Takes a reference DOMElement and returns a DOMText (or null).
+	 * @param  callable $get_adjacent_parent Takes a single DOMElement parameter and returns a DOMText (or null).
+	 * @param  ?DOMNode $node                Optional. The content node. Default null.
 	 *
-	 * @return \DOMText|null Null if $node is a block-level element or no text sibling exists.
+	 * @return DOMNode|null Null if $node is a block-level element or no acceptable sibling exists.
 	 */
-	private static function get_adjacent_textnode( callable $iterate, callable $get_adjacent_parent, \DOMNode $node = null ) {
+	private static function get_adjacent_node( callable $is_acceptable, callable $iterate, callable $get_adjacent_parent, ?DOMNode $node ): ?DOMNode {
 		if ( ! isset( $node ) || self::is_block_tag( $node ) ) {
 			return null;
 		}
@@ -299,91 +363,109 @@ abstract class DOM {
 		/**
 		 * The result node.
 		 *
-		 * @var \DOMText|null
+		 * @var DOMNode|null
 		 */
 		$adjacent = null;
 
 		/**
 		 * The initial node.
 		 *
-		 * @var \DOMNode|null
+		 * @var DOMNode
 		 */
 		$iterated_node = $node;
 
 		// Iterate to find adjacent node.
 		while ( null !== $iterated_node && null === $adjacent ) {
-			/**
-			 * Let's try the next node.
-			 *
-			 * @var \DOMNode|null
-			 */
-			$adjacent = $iterate( $iterated_node );
+			$adjacent = $iterate( $is_acceptable, $iterated_node );
 		}
 
 		// Last ressort.
 		if ( null === $adjacent ) {
-			/**
-			 * The parent node.
-			 *
-			 * @var \DOMNode|null
-			 */
-			$adjacent = $get_adjacent_parent( $node->parentNode );
+			$adjacent = $get_adjacent_parent( $is_acceptable, $node->parentNode );
 		}
 
 		return $adjacent;
 	}
 
 	/**
-	 * Retrieves the first \DOMText child of the element. Block-level child elements are ignored.
+	 * Retrieves the first DOMText child of the element. Block-level child elements are ignored.
 	 *
-	 * @param \DOMNode|null $node      Optional. Default null.
-	 * @param bool          $recursive Should be set to true on recursive calls. Optional. Default false.
+	 * @param  ?DOMNode $node      Optional. Default null.
+	 * @param  bool     $recursive Should be set to true on recursive calls. Optional. Default false.
 	 *
-	 * @return \DOMText|null The first child of type \DOMText, the element itself if it is of type \DOMText or null.
+	 * @return DOMText|null The first child of type DOMText, the element itself if it is of type DOMText or null.
 	 */
-	public static function get_first_textnode( \DOMNode $node = null, $recursive = false ) {
-		return self::get_edge_textnode( [ __CLASS__, __FUNCTION__ ], $node, $recursive, false );
+	public static function get_first_textnode( ?DOMNode $node = null, bool $recursive = false ): ?DOMText {
+		/**
+		 * We only allow textnodes in our `is_acceptable` callable.
+		 *
+		 * @phpstan-var ?DOMText
+		 */
+		return self::get_first_acceptable_node(
+			function ( ?DOMNode $node ): bool {
+				return $node instanceof DOMText;
+			},
+			$node,
+			$recursive
+		);
 	}
 
 	/**
-	 * Retrieves the last \DOMText child of the element. Block-level child elements are ignored.
+	 * Retrieves the first acceptable child of the element. Block-level child elements are ignored.
 	 *
-	 * @param \DOMNode|null $node      Optional. Default null.
-	 * @param bool          $recursive Should be set to true on recursive calls. Optional. Default false.
+	 * @param  callable $is_acceptable Returns true if the \DOMnode is acceptable.
+	 * @param  ?DOMNode $node          Optional. Default null.
+	 * @param  bool     $recursive     Should be set to true on recursive calls. Optional. Default false.
 	 *
-	 * @return \DOMText|null The last child of type \DOMText, the element itself if it is of type \DOMText or null.
+	 * @return DOMNode|null The first acceptable child node, the element itself if it is acceptable or null.
 	 */
-	public static function get_last_textnode( \DOMNode $node = null, $recursive = false ) {
-		return self::get_edge_textnode( [ __CLASS__, __FUNCTION__ ], $node, $recursive, true );
+	public static function get_first_acceptable_node( callable $is_acceptable, ?DOMNode $node = null, bool $recursive = false ): ?DOMNode {
+		return self::get_edge_node( $is_acceptable, [ __CLASS__, __FUNCTION__ ], $node, $recursive, false );
 	}
 
 	/**
-	 * Retrieves an edge \DOMText child of the element specified by the callable.
+	 * Retrieves the last acceptable child of the element. Block-level child elements are ignored.
+	 *
+	 * @param  callable     $is_acceptable Returns true if the \DOMnode is acceptable.
+	 * @param  DOMNode|null $node          Optional. Default null.
+	 * @param  bool         $recursive     Should be set to true on recursive calls. Optional. Default false.
+	 *
+	 * @return DOMNode|null The last acceptable child node, the element itself if it is acceptable or null.
+	 */
+	public static function get_last_acceptable_node( callable $is_acceptable, ?DOMNode $node = null, bool $recursive = false ): ?DOMNode {
+		return self::get_edge_node( $is_acceptable, [ __CLASS__, __FUNCTION__ ], $node, $recursive, true );
+	}
+
+	/**
+	 * Retrieves an edge child of the element specified by the callable.
 	 * Block-level child elements are ignored.
 	 *
 	 * @since 5.0.0
+	 * @since 7.0.0 Renamed to `get_edge_node` and refactored to take a callable to determine acceptable nodes.
 	 *
-	 * @param callable      $get_textnode Takes two parameters, a \DOMNode and a boolean flag for recursive calls.
-	 * @param \DOMNode|null $node         Optional. Default null.
-	 * @param bool          $recursive    Should be set to true on recursive calls. Optional. Default false.
-	 * @param bool          $reverse      Whether to iterate forward or backward. Optional. Default false.
+	 * @param  callable $is_acceptable       Returns true if the \DOMnode is acceptable.
+	 * @param  callable $get_acceptable_node Takes two parameters, a DOMNode and a boolean flag for recursive calls.
+	 * @param  ?DOMNode $node                Optional. Default null.
+	 * @param  bool     $recursive           Should be set to true on recursive calls. Optional. Default false.
+	 * @param  bool     $reverse             Whether to iterate forward or backward. Optional. Default false.
 	 *
-	 * @return \DOMText|null The last child of type \DOMText, the element itself if it is of type \DOMText or null.
+	 * @return DOMNode|null The last acceptable child, the element itself if it is acceptable or null.
 	 */
-	private static function get_edge_textnode( callable $get_textnode, \DOMNode $node = null, $recursive = false, $reverse = false ) {
-		if ( ! isset( $node ) ) {
-			return null;
-		}
-
-		if ( $node instanceof \DOMText ) {
+	private static function get_edge_node( callable $is_acceptable, callable $get_acceptable_node, ?DOMNode $node, bool $recursive = false, bool $reverse = false ): ?DOMNode {
+		if ( $is_acceptable( $node ) ) {
 			return $node;
-		} elseif ( ! $node instanceof \DOMElement || $recursive && self::is_block_tag( $node ) ) {
-			// Return null if $node is neither \DOMText nor \DOMElement or
+		} elseif ( ! $node instanceof DOMElement || ( $recursive && self::is_block_tag( $node ) ) ) {
+			// Return null if $node is neither an acceptable node nor DOMElement or
 			// when we are recursing and already at the block level.
 			return null;
 		}
 
-		$edge_textnode = null;
+		/**
+		 * The result node.
+		 *
+		 * @var DOMNode|null
+		 */
+		$acceptable_edge_node = null;
 
 		if ( $node->hasChildNodes() ) {
 			$children    = $node->childNodes;
@@ -391,33 +473,33 @@ abstract class DOM {
 			$index       = $reverse ? $max - 1 : 0;
 			$incrementor = $reverse ? -1 : +1;
 
-			while ( $index >= 0 && $index < $max && null === $edge_textnode ) {
-				$edge_textnode = $get_textnode( $children->item( $index ), true );
-				$index        += $incrementor;
+			while ( $index >= 0 && $index < $max && null === $acceptable_edge_node ) {
+				$acceptable_edge_node = $get_acceptable_node( $is_acceptable, $children->item( $index ), true );
+				$index               += $incrementor;
 			}
 		}
 
-		return $edge_textnode;
+		return $acceptable_edge_node;
 	}
 
 	/**
 	 * Returns the nearest block-level parent (or null).
 	 *
-	 * @param \DOMNode $node Required.
+	 * @param DOMNode $node Required.
 	 *
-	 * @return \DOMElement|null
+	 * @return DOMElement|null
 	 */
-	public static function get_block_parent( \DOMNode $node ) {
+	public static function get_block_parent( DOMNode $node ): ?DOMElement {
 		$parent = $node->parentNode;
-		if ( ! $parent instanceof \DOMElement ) {
+		if ( ! $parent instanceof DOMElement ) {
 			return null;
 		}
 
-		while ( ! self::is_block_tag( $parent ) && $parent->parentNode instanceof \DOMElement ) {
+		while ( ! self::is_block_tag( $parent ) && $parent->parentNode instanceof DOMElement ) {
 			/**
-			 * The parent is sure to be a \DOMElement.
+			 * The parent is sure to be a DOMElement.
 			 *
-			 * @var \DOMElement
+			 * @var DOMElement
 			 */
 			$parent = $parent->parentNode;
 		}
@@ -426,33 +508,16 @@ abstract class DOM {
 	}
 
 	/**
-	 * Retrieves the tag name of the nearest block-level parent.
-	 *
-	 * @param \DOMNode $node A node.
-
-	 * @return string The tag name (or the empty string).
-	 */
-	public static function get_block_parent_name( \DOMNode $node ) {
-		$parent = self::get_block_parent( $node );
-
-		if ( ! empty( $parent ) ) {
-			return $parent->tagName;
-		} else {
-			return '';
-		}
-	}
-
-	/**
 	 * Determines if a node is a block tag.
 	 *
 	 * @since 6.0.0
 	 *
-	 * @param  \DOMNode $node Required.
+	 * @param  DOMNode $node Required.
 	 *
 	 * @return bool
 	 */
-	public static function is_block_tag( \DOMNode $node ) {
-		return $node instanceof \DOMElement && isset( self::$block_tags[ $node->tagName ] );
+	public static function is_block_tag( DOMNode $node ): bool {
+		return $node instanceof DOMElement && isset( self::$block_tags[ $node->tagName ] );
 	}
 }
 

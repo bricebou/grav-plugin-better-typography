@@ -2,7 +2,7 @@
 /**
  *  This file is part of PHP-Typography.
  *
- *  Copyright 2017-2019 Peter Putzer.
+ *  Copyright 2017-2024 Peter Putzer.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -49,38 +49,42 @@ class Hyphenate_Compounds_Fix extends Hyphenate_Fix {
 	 * @param Cache|null $cache           Optional. Default null.
 	 * @param bool       $feed_compatible Optional. Default false.
 	 */
-	public function __construct( Cache $cache = null, $feed_compatible = false ) {
+	public function __construct( ?Cache $cache = null, $feed_compatible = false ) {
 		parent::__construct( $cache, Token_Fix::COMPOUND_WORDS, $feed_compatible );
 	}
 
 	/**
-	 * Apply the tweak to a given textnode.
+	 * Apply the fix to a given set of tokens
 	 *
-	 * @param Token[]       $tokens   Required.
-	 * @param Settings      $settings Required.
-	 * @param bool          $is_title Optional. Default false.
-	 * @param \DOMText|null $textnode Optional. Default null.
+	 * @since 7.0.0 The parameter order has been re-arranged to mirror Node_Fix.
 	 *
-	 * @return Token[] An array of tokens.
+	 * @param Token[]  $tokens   The set of tokens.
+	 * @param \DOMText $textnode The context DOM node.
+	 * @param Settings $settings The settings to apply.
+	 * @param bool     $is_title Indicates if the processed tokens occur in a title/heading context.
+	 *
+	 * @return Token[]           The fixed set of tokens.
 	 */
-	public function apply( array $tokens, Settings $settings, $is_title = false, \DOMText $textnode = null ) {
-		if ( empty( $settings[ Settings::HYPHENATE_COMPOUNDS ] ) ) {
+	public function apply( array $tokens, \DOMText $textnode, Settings $settings, $is_title ) {
+		if ( empty( $settings->hyphenate_compounds ) ) {
 			return $tokens; // abort.
 		}
 
 		// Hyphenate compound words.
 		foreach ( $tokens as $key => $word_token ) {
 			$component_words = [];
-			foreach ( \preg_split( '/(-)/', $word_token->value, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE ) as $word_part ) {
+			$word_parts      = \preg_split( '/(-)/', $word_token->value, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE ) ?: []; // phpcs:ignore Universal.Operators.DisallowShortTernary -- Ensure array type.
+			foreach ( $word_parts as $word_part ) {
 				$component_words[] = new Text_Parser\Token( $word_part, Text_Parser\Token::WORD );
 			}
 
 			$tokens[ $key ] = $word_token->with_value(
 				\array_reduce(
-					parent::apply( $component_words, $settings, $is_title, $textnode ),
-					function( $carry, $item ) {
+					parent::apply( $component_words, $textnode, $settings, $is_title ),
+					function ( ?string $carry, Token $item ): string {
 						return $carry . $item->value;
-					}
+					},
+					''
 				)
 			);
 		}

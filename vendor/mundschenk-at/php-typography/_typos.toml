@@ -1,0 +1,28 @@
+[files]
+extend-exclude = [
+    ".git/",
+    "src/lang/*.json",
+    "src/diacritics/*.json",
+    "tests/",
+    "CHANGELOG.md",
+    "README.md"
+]
+ignore-hidden = false
+
+[default]
+extend-ignore-re = [
+    # spellchecker:disable-line:
+    "(?Rm)^.*#\\s*spellchecker:disable-line(\\b.*)?$",
+
+    # spellchecker:<on|off>:
+    "#\\s*spellchecker:off\\s*\\n.*\\n\\s*#\\s*spellchecker:on"
+]
+
+[type.php]
+extend-ignore-re = [
+    # spellchecker:disable-line:
+    "(?Rm)^.*//\\s*@spellchecker:disable-line(\\b.*)?$",
+
+    # spellchecker:<on|off>:
+    "//\\s*@spellchecker:off\\s*\\n.*\\n\\s*//\\s*@spellchecker:on"
+]

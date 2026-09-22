@@ -2,7 +2,7 @@
 /**
  *  This file is part of PHP-Typography.
  *
- *  Copyright 2017-2019 Peter Putzer.
+ *  Copyright 2017-2024 Peter Putzer.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,8 +26,8 @@
 
 namespace PHP_Typography\Settings;
 
-use PHP_Typography\Settings;
 use PHP_Typography\U;
+use PHP_Typography\Exceptions\Invalid_Style_Exception;
 
 /**
  * A factory class for different quote styles.
@@ -54,72 +54,79 @@ abstract class Quote_Style {
 	const SINGLE_GUILLEMETS_REVERSED = 'singleGuillemetsReversed';
 	const CORNER_BRACKETS            = 'cornerBrackets';
 	const WHITE_CORNER_BRACKETS      = 'whiteCornerBracket';
+	const NONE                       = 'noneAtAll';
 
 	/**
 	 * Available quote styles.
 	 *
-	 * @var array
+	 * @since 7.0.0 Now a private constant instead of a private property.
+	 *
+	 * @var array<string,string[]>
 	 */
-	private static $styles = [
+	private const STYLES = [
 		self::DOUBLE_CURLED              => [
-			self::_OPEN  => U::DOUBLE_QUOTE_OPEN,
-			self::_CLOSE => U::DOUBLE_QUOTE_CLOSE,
+			self::OPEN  => U::DOUBLE_QUOTE_OPEN,
+			self::CLOSE => U::DOUBLE_QUOTE_CLOSE,
 		],
 		self::DOUBLE_CURLED_REVERSED     => [
-			self::_OPEN  => U::DOUBLE_QUOTE_CLOSE,
-			self::_CLOSE => U::DOUBLE_QUOTE_CLOSE,
+			self::OPEN  => U::DOUBLE_QUOTE_CLOSE,
+			self::CLOSE => U::DOUBLE_QUOTE_CLOSE,
 		],
 		self::DOUBLE_LOW_9               => [
-			self::_OPEN  => U::DOUBLE_LOW_9_QUOTE,
-			self::_CLOSE => U::DOUBLE_QUOTE_CLOSE,
+			self::OPEN  => U::DOUBLE_LOW_9_QUOTE,
+			self::CLOSE => U::DOUBLE_QUOTE_CLOSE,
 		],
 		self::DOUBLE_LOW_9_REVERSED      => [
-			self::_OPEN  => U::DOUBLE_LOW_9_QUOTE,
-			self::_CLOSE => U::DOUBLE_QUOTE_OPEN,
+			self::OPEN  => U::DOUBLE_LOW_9_QUOTE,
+			self::CLOSE => U::DOUBLE_QUOTE_OPEN,
 		],
 		self::SINGLE_CURLED              => [
-			self::_OPEN  => U::SINGLE_QUOTE_OPEN,
-			self::_CLOSE => U::SINGLE_QUOTE_CLOSE,
+			self::OPEN  => U::SINGLE_QUOTE_OPEN,
+			self::CLOSE => U::SINGLE_QUOTE_CLOSE,
 		],
 		self::SINGLE_CURLED_REVERSED     => [
-			self::_OPEN  => U::SINGLE_QUOTE_CLOSE,
-			self::_CLOSE => U::SINGLE_QUOTE_CLOSE,
+			self::OPEN  => U::SINGLE_QUOTE_CLOSE,
+			self::CLOSE => U::SINGLE_QUOTE_CLOSE,
 		],
 		self::SINGLE_LOW_9               => [
-			self::_OPEN  => U::SINGLE_LOW_9_QUOTE,
-			self::_CLOSE => U::SINGLE_QUOTE_CLOSE,
+			self::OPEN  => U::SINGLE_LOW_9_QUOTE,
+			self::CLOSE => U::SINGLE_QUOTE_CLOSE,
 		],
 		self::SINGLE_LOW_9_REVERSED      => [
-			self::_OPEN  => U::SINGLE_LOW_9_QUOTE,
-			self::_CLOSE => U::SINGLE_QUOTE_OPEN,
+			self::OPEN  => U::SINGLE_LOW_9_QUOTE,
+			self::CLOSE => U::SINGLE_QUOTE_OPEN,
 		],
 		self::DOUBLE_GUILLEMETS          => [
-			self::_OPEN  => U::GUILLEMET_OPEN,
-			self::_CLOSE => U::GUILLEMET_CLOSE,
+			self::OPEN  => U::GUILLEMET_OPEN,
+			self::CLOSE => U::GUILLEMET_CLOSE,
 		],
 		self::DOUBLE_GUILLEMETS_REVERSED => [
-			self::_OPEN  => U::GUILLEMET_CLOSE,
-			self::_CLOSE => U::GUILLEMET_OPEN,
+			self::OPEN  => U::GUILLEMET_CLOSE,
+			self::CLOSE => U::GUILLEMET_OPEN,
 		],
 		self::DOUBLE_GUILLEMETS_FRENCH   => [
-			self::_OPEN  => U::GUILLEMET_OPEN . U::NO_BREAK_NARROW_SPACE,
-			self::_CLOSE => U::NO_BREAK_NARROW_SPACE . U::GUILLEMET_CLOSE,
+			self::OPEN  => U::GUILLEMET_OPEN . U::NO_BREAK_NARROW_SPACE,
+			self::CLOSE => U::NO_BREAK_NARROW_SPACE . U::GUILLEMET_CLOSE,
 		],
 		self::SINGLE_GUILLEMETS          => [
-			self::_OPEN  => U::SINGLE_ANGLE_QUOTE_OPEN,
-			self::_CLOSE => U::SINGLE_ANGLE_QUOTE_CLOSE,
+			self::OPEN  => U::SINGLE_ANGLE_QUOTE_OPEN,
+			self::CLOSE => U::SINGLE_ANGLE_QUOTE_CLOSE,
 		],
 		self::SINGLE_GUILLEMETS_REVERSED => [
-			self::_OPEN  => U::SINGLE_ANGLE_QUOTE_CLOSE,
-			self::_CLOSE => U::SINGLE_ANGLE_QUOTE_OPEN,
+			self::OPEN  => U::SINGLE_ANGLE_QUOTE_CLOSE,
+			self::CLOSE => U::SINGLE_ANGLE_QUOTE_OPEN,
 		],
 		self::CORNER_BRACKETS            => [
-			self::_OPEN  => U::LEFT_CORNER_BRACKET,
-			self::_CLOSE => U::RIGHT_CORNER_BRACKET,
+			self::OPEN  => U::LEFT_CORNER_BRACKET,
+			self::CLOSE => U::RIGHT_CORNER_BRACKET,
 		],
 		self::WHITE_CORNER_BRACKETS      => [
-			self::_OPEN  => U::LEFT_WHITE_CORNER_BRACKET,
-			self::_CLOSE => U::RIGHT_WHITE_CORNER_BRACKET,
+			self::OPEN  => U::LEFT_WHITE_CORNER_BRACKET,
+			self::CLOSE => U::RIGHT_WHITE_CORNER_BRACKET,
+		],
+		self::NONE                       => [
+			self::OPEN  => '',
+			self::CLOSE => '',
 		],
 	];
 
@@ -130,7 +137,7 @@ abstract class Quote_Style {
 	 *
 	 * @var int
 	 */
-	const _OPEN = 0;
+	private const OPEN = 0;
 
 	/**
 	 * Closing quote.
@@ -139,23 +146,28 @@ abstract class Quote_Style {
 	 *
 	 * @var int
 	 */
-	const _CLOSE = 1;
+	private const CLOSE = 1;
 
 	/**
 	 * Creates a new Quotes object in the given style.
 	 *
 	 * @since 6.5.0 The $settings parameter has been deprecated.
+	 * @since 7.0.0 Deprecated parameter $settings removed. The $style parameter
+	 *              can optionally now also be a Quotes object.
 	 *
-	 * @param string   $style    The quote style.
-	 * @param Settings $settings The current settings.
+	 * @param Quotes|string $style The quote style.
 	 *
-	 * @return Quotes|null Returns null in case of an invalid $style parameter.
+	 * @return Quotes
+	 *
+	 * @throws Invalid_Style_Exception An exception is thrown if $style is not a Quotes object nor a valid style.
 	 */
-	public static function get_styled_quotes( $style, /** Currently unused. @scrutinizer ignore-unused */ Settings $settings ) {
-		if ( isset( self::$styles[ $style ] ) ) {
-			return new Simple_Quotes( self::$styles[ $style ][ self::_OPEN ], self::$styles[ $style ][ self::_CLOSE ] );
+	public static function get_styled_quotes( $style ): Quotes {
+		if ( $style instanceof Quotes ) {
+			return $style;
+		} elseif ( isset( self::STYLES[ $style ] ) ) {
+			return new Simple_Quotes( self::STYLES[ $style ][ self::OPEN ], self::STYLES[ $style ][ self::CLOSE ] );
+		} else {
+			throw new Invalid_Style_Exception( "Invalid quote style $style." );
 		}
-
-		return null;
 	}
 }

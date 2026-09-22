@@ -2,7 +2,7 @@
 /**
  *  This file is part of PHP-Typography.
  *
- *  Copyright 2017-2019 Peter Putzer.
+ *  Copyright 2017-2026 Peter Putzer.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@
 
 namespace PHP_Typography\Fixes\Node_Fixes;
 
-use PHP_Typography\DOM;
 use PHP_Typography\Settings;
 use PHP_Typography\U;
 
@@ -82,20 +81,20 @@ class Smart_Maths_Fix extends Abstract_Node_Fix {
 
 		(\d+)' . U::MINUS . '(\d+)
 
-		' . self::FINAL_LOOKAHEAD . '                   # lookahead assertion: most punctuation marks are allowd
+		' . self::FINAL_LOOKAHEAD . '                   # lookahead assertion: most punctuation marks are allowed
 		(?!' . self::DECIMAL_SEPARATOR . '[0-9]+)                                    # negative lookahead assertion: but not decimal numbers
 	/Sxu';
 
 	// Revert fractions to basic slash.
 	const REVERT_FRACTION = "/
-		(?<=\s|\A|\'|\"|" . U::NO_BREAK_SPACE . ')
+		(?<=\s|\A|\'|\"|[" . U::NO_BREAK_SPACE . '])
 		(
 			\d+
 		)
 		' . U::DIVISION . '
 		(
 			\d+
-			(?:st|nd|rd|th)?
+			(?:st|nd|rd|th)? # spellchecker:disable-line
 		)
 		' . self::FINAL_LOOKAHEAD . '
 	/Sxu';
@@ -184,12 +183,16 @@ class Smart_Maths_Fix extends Abstract_Node_Fix {
 	/**
 	 * Apply the fix to a given textnode.
 	 *
-	 * @param \DOMText $textnode Required.
-	 * @param Settings $settings Required.
-	 * @param bool     $is_title Optional. Default false.
+	 * @since 7.0.0 All parameters are now required.
+	 *
+	 * @param \DOMText $textnode The DOM node.
+	 * @param Settings $settings The settings to apply.
+	 * @param bool     $is_title Indicates if the processed tokens occur in a title/heading context.
+	 *
+	 * @return void
 	 */
-	public function apply( \DOMText $textnode, Settings $settings, $is_title = false ) {
-		if ( empty( $settings[ Settings::SMART_MATH ] ) ) {
+	public function apply( \DOMText $textnode, Settings $settings, $is_title ) {
+		if ( empty( $settings->smart_math ) ) {
 			return;
 		}
 
@@ -197,9 +200,9 @@ class Smart_Maths_Fix extends Abstract_Node_Fix {
 		$node_data = $textnode->data;
 
 		// First, let's find math equations.
-		$node_data = \preg_replace_callback(
+		$node_data = (string) \preg_replace_callback(
 			self::MATH_EQUATION,
-			function( array $matches ) {
+			function ( array $matches ): string {
 				return \str_replace(
 					[
 						'-',
@@ -220,6 +223,6 @@ class Smart_Maths_Fix extends Abstract_Node_Fix {
 		);
 
 		// Revert some non-desired changes and restore textnode content.
-		$textnode->data = \preg_replace( self::REVERT_MATCHES, self::REVERT_REPLACEMENTS, $node_data );
+		$textnode->data = (string) \preg_replace( self::REVERT_MATCHES, self::REVERT_REPLACEMENTS, $node_data );
 	}
 }

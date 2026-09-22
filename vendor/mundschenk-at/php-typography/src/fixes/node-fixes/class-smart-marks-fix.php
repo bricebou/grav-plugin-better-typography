@@ -2,7 +2,7 @@
 /**
  *  This file is part of PHP-Typography.
  *
- *  Copyright 2017-2019 Peter Putzer.
+ *  Copyright 2017-2026 Peter Putzer.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -59,7 +59,7 @@ class Smart_Marks_Fix extends Abstract_Node_Fix {
 	 *
 	 * @since 6.0.0
 	 *
-	 * @var array
+	 * @var string[]
 	 */
 	private $marks;
 
@@ -68,7 +68,7 @@ class Smart_Marks_Fix extends Abstract_Node_Fix {
 	 *
 	 * @since 6.0.0
 	 *
-	 * @var array
+	 * @var string[]
 	 */
 	private $replacements;
 
@@ -87,12 +87,16 @@ class Smart_Marks_Fix extends Abstract_Node_Fix {
 	/**
 	 * Apply the fix to a given textnode.
 	 *
-	 * @param \DOMText $textnode Required.
-	 * @param Settings $settings Required.
-	 * @param bool     $is_title Optional. Default false.
+	 * @since 7.0.0 All parameters are now required.
+	 *
+	 * @param \DOMText $textnode The DOM node.
+	 * @param Settings $settings The settings to apply.
+	 * @param bool     $is_title Indicates if the processed tokens occur in a title/heading context.
+	 *
+	 * @return void
 	 */
-	public function apply( \DOMText $textnode, Settings $settings, $is_title = false ) {
-		if ( empty( $settings[ Settings::SMART_MARKS ] ) ) {
+	public function apply( \DOMText $textnode, Settings $settings, $is_title ) {
+		if ( empty( $settings->smart_marks ) ) {
 			return;
 		}
 
@@ -100,12 +104,12 @@ class Smart_Marks_Fix extends Abstract_Node_Fix {
 		$node_data = $textnode->data;
 
 		// Escape usage of "501(c)(1...29)" (US non-profit).
-		$node_data = \preg_replace( self::ESCAPE_501C, '$1' . RE::ESCAPE_MARKER . '$2' . RE::ESCAPE_MARKER . '$3', $node_data );
+		$node_data = (string) \preg_replace( self::ESCAPE_501C, '$1' . RE::ESCAPE_MARKER . '$2' . RE::ESCAPE_MARKER . '$3', $node_data );
 
 		// Replace marks.
 		$node_data = \str_replace( $this->marks, $this->replacements, $node_data );
 
-		// Un-escape escaped sequences & resetore textnode content.
+		// Un-escape escaped sequences & restore textnode content.
 		$textnode->data = \str_replace( RE::ESCAPE_MARKER, '', $node_data );
 	}
 }

@@ -2,7 +2,7 @@
 /**
  *  This file is part of PHP-Typography.
  *
- *  Copyright 2017 Peter Putzer.
+ *  Copyright 2017-2024 Peter Putzer.
  *
  *  This program is free software; you can redistribute it and/or modify modify
  *  it under the terms of the GNU General Public License as published by
@@ -32,7 +32,6 @@ use PHP_Typography\Hyphenator\Cache;
 
 use PHP_Typography\Fixes\Node_Fix;
 use PHP_Typography\Fixes\Token_Fix;
-use PHP_Typography\Fixes\Token_Fixes\Hyphenate_Fix;
 
 /**
  * Manages the fixes used by PHP_Typography.
@@ -43,25 +42,29 @@ use PHP_Typography\Fixes\Token_Fixes\Hyphenate_Fix;
  */
 class Registry {
 
+	const PRE_PROCESSING     = 01;
 	const CHARACTERS         = 10;
 	const SPACING_PRE_WORDS  = 20;
 	const PROCESS_WORDS      = 30;
 	const SPACING_POST_WORDS = 40;
 	const HTML_INSERTION     = 50;
+	const POST_PROCESSING    = 99;
 
-	const GROUPS = [ self::CHARACTERS, self::SPACING_PRE_WORDS, self::PROCESS_WORDS, self::SPACING_POST_WORDS, self::HTML_INSERTION ];
+	const GROUPS = [ self::PRE_PROCESSING, self::CHARACTERS, self::SPACING_PRE_WORDS, self::PROCESS_WORDS, self::SPACING_POST_WORDS, self::HTML_INSERTION, self::POST_PROCESSING ];
 
 	/**
-	 * An array of Node_Fix implementations.
+	 * An array of Node_Fix implementations indexed by groups.
 	 *
-	 * @var array
+	 * @var array<int,Node_Fix[]>
 	 */
 	private $node_fixes = [
+		self::PRE_PROCESSING     => [],
 		self::CHARACTERS         => [],
 		self::SPACING_PRE_WORDS  => [],
 		self::PROCESS_WORDS      => [],
 		self::SPACING_POST_WORDS => [],
 		self::HTML_INSERTION     => [],
+		self::POST_PROCESSING    => [],
 	];
 
 	/**
@@ -85,7 +88,7 @@ class Registry {
 	 *
 	 * @return Node_Fix[][]
 	 */
-	public function get_node_fixes() {
+	public function get_node_fixes(): array {
 		return $this->node_fixes;
 	}
 
@@ -94,12 +97,12 @@ class Registry {
 	 *
 	 * @since 5.0.0
 	 *
-	 * @param Node_Fix $fix   Required.
-	 * @param int      $group Required. Only the constants CHARACTERS, SPACING_PRE_WORDS, SPACING_POST_WORDS, HTML_INSERTION are valid.
+	 * @param Node_Fix               $fix   Required.
+	 * @param value-of<self::GROUPS> $group Required. Only the constants CHARACTERS, SPACING_PRE_WORDS, SPACING_POST_WORDS, HTML_INSERTION are valid.
 	 *
 	 * @throws \InvalidArgumentException Group is invalid.
 	 */
-	public function register_node_fix( Node_Fix $fix, $group ) {
+	public function register_node_fix( Node_Fix $fix, $group ): void {
 		if ( isset( $this->node_fixes[ $group ] ) ) {
 			$this->node_fixes[ $group ][] = $fix;
 		} else {
@@ -112,7 +115,7 @@ class Registry {
 	 *
 	 * @param Token_Fix $fix Required.
 	 */
-	public function register_token_fix( Token_Fix $fix ) {
+	public function register_token_fix( Token_Fix $fix ): void {
 		$this->process_words_fix->register_token_fix( $fix );
 	}
 
@@ -121,7 +124,7 @@ class Registry {
 	 *
 	 * @param Cache $cache A hyphenator cache instance.
 	 */
-	public function update_hyphenator_cache( Cache $cache ) {
+	public function update_hyphenator_cache( Cache $cache ): void {
 		$this->process_words_fix->update_hyphenator_cache( $cache );
 	}
 
@@ -133,9 +136,9 @@ class Registry {
 	 * @param bool     $is_title Treat as title/heading tag if true.
 	 * @param bool     $is_feed  Check for feed compatibility if true.
 	 */
-	public function apply_fixes( \DOMText $textnode, Settings $settings, $is_title, $is_feed ) {
-		foreach ( $this->node_fixes as $group => $fixes ) {
-			foreach ( $fixes as $fix ) {
+	public function apply_fixes( \DOMText $textnode, Settings $settings, $is_title, $is_feed ): void {
+		foreach ( $this->node_fixes as $fix_group ) {
+			foreach ( $fix_group as $fix ) {
 				if ( ! $is_feed || $fix->feed_compatible() ) {
 					$fix->apply( $textnode, $settings, $is_title );
 				}

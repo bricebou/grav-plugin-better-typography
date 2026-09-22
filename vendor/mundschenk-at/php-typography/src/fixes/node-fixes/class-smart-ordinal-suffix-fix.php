@@ -2,7 +2,7 @@
 /**
  *  This file is part of PHP-Typography.
  *
- *  Copyright 2014-2019 Peter Putzer.
+ *  Copyright 2014-2024 Peter Putzer.
  *  Copyright 2009-2011 KINGdesk, LLC.
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -27,7 +27,6 @@
 
 namespace PHP_Typography\Fixes\Node_Fixes;
 
-use PHP_Typography\DOM;
 use PHP_Typography\RE;
 use PHP_Typography\Settings;
 use PHP_Typography\U;
@@ -44,8 +43,8 @@ use PHP_Typography\U;
 class Smart_Ordinal_Suffix_Fix extends Abstract_Node_Fix {
 
 	// Possible suffixes.
-	const ENGLISH_SUFFIXES = 'st|nd|rd|th';
-	const FRENCH_SUFFIXES  = 'er|re|e|ère|d|nd|nde|de|me|ème|è';
+	const ENGLISH_SUFFIXES = 'st|nd|rd|th'; // @spellchecker:disable-line
+	const FRENCH_SUFFIXES  = 'er|re|e|ère|d|nd|nde|de|me|ème|è'; // @spellchecker:disable-line
 	const LATIN_SUFFIXES   = 'o';
 
 	// Ordinals with arabic numerals.
@@ -97,7 +96,7 @@ class Smart_Ordinal_Suffix_Fix extends Abstract_Node_Fix {
 	 * @param string|null $css_class       Optional. Default null.
 	 * @param bool        $feed_compatible Optional. Default false.
 	 */
-	public function __construct( $css_class = null, $feed_compatible = false ) {
+	public function __construct( ?string $css_class = null, $feed_compatible = false ) {
 		parent::__construct( $feed_compatible );
 
 		$ordinal_class     = empty( $css_class ) ? '' : ' class="' . $css_class . '"';
@@ -107,23 +106,27 @@ class Smart_Ordinal_Suffix_Fix extends Abstract_Node_Fix {
 	/**
 	 * Apply the fix to a given textnode.
 	 *
-	 * @param \DOMText $textnode Required.
-	 * @param Settings $settings Required.
-	 * @param bool     $is_title Optional. Default false.
+	 * @since 7.0.0 All parameters are now required.
+	 *
+	 * @param \DOMText $textnode The DOM node.
+	 * @param Settings $settings The settings to apply.
+	 * @param bool     $is_title Indicates if the processed tokens occur in a title/heading context.
+	 *
+	 * @return void
 	 */
-	public function apply( \DOMText $textnode, Settings $settings, $is_title = false ) {
-		if ( empty( $settings[ Settings::SMART_ORDINAL_SUFFIX ] ) ) {
+	public function apply( \DOMText $textnode, Settings $settings, $is_title ) {
+		if ( empty( $settings->smart_ordinal_suffix ) ) {
 			return;
 		}
 
 		// Always match Arabic numbers.
 		$patterns = [ self::RE_ARABIC_ORDINALS ];
 
-		// Only match Roman numbers if explicitely enabled.
-		if ( ! empty( $settings[ Settings::SMART_ORDINAL_SUFFIX_ROMAN_NUMERALS ] ) ) {
+		// Only match Roman numbers if explicitly enabled.
+		if ( ! empty( $settings->smart_ordinal_suffix_match_roman_numerals ) ) {
 			$patterns[] = self::RE_ROMAN_ORDINALS;
 		}
 
-		$textnode->data = \preg_replace( $patterns, $this->replacement, $textnode->data );
+		$textnode->data = (string) \preg_replace( $patterns, $this->replacement, $textnode->data );
 	}
 }

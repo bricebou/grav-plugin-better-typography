@@ -2,7 +2,7 @@
   "name": "bricebou/better-typography",
   "type": "grav-plugin",
   "description": "Automatically improves the typography of your content. Provides a Twig filter.",
-  "keywords": ["plugin"],
+  "keywords": ["plugin", "grav", "typography"],
   "homepage": "https://github.com/bricebou/grav-plugin-better-typography",
   "license": "MIT",
   "authors": [
@@ -13,18 +13,38 @@
     }
   ],
   "require": {
-    "php": ">=7.1.3",
-    "mundschenk-at/php-typography": "^6.6"
+    "php": ">=8.2",
+    "ext-mbstring": "*",
+    "mundschenk-at/php-typography": "^7.0"
+  },
+  "require-dev": {
+    "phpstan/phpstan": "^2.2",
+    "rector/rector": "^2.6",
+    "symplify/easy-coding-standard": "^13.3"
   },
   "autoload": {
     "psr-4": {
       "Grav\\Plugin\\BetterTypography\\": "classes/"
     },
-    "classmap":  ["better-typography.php"]
+    "classmap": ["better-typography.php"]
   },
   "config": {
     "platform": {
-      "php": "7.1.3"
-    }
+      "php": "8.2"
+    },
+    "sort-packages": true
+  },
+  "scripts": {
+    "rector": "rector process",
+    "rector:check": "rector process --dry-run",
+    "ecs": "ecs check --fix",
+    "ecs:check": "ecs check",
+    "phpstan": "phpstan analyse",
+    "check": [
+      "@rector:check",
+      "@ecs:check",
+      "@phpstan"
+    ],
+    "vendor:release": "composer install --no-dev --prefer-dist --optimize-autoloader"
   }
 }

@@ -2,29 +2,27 @@
     "packages": [
         {
             "name": "masterminds/html5",
-            "version": "2.7.5",
-            "version_normalized": "2.7.5.0",
+            "version": "2.11.0",
+            "version_normalized": "2.11.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Masterminds/html5-php.git",
-                "reference": "f640ac1bdddff06ea333a920c95bbad8872429ab"
+                "reference": "a1e7a2f88ee13635d86fc61cfbdf2306a76ddfc7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Masterminds/html5-php/zipball/f640ac1bdddff06ea333a920c95bbad8872429ab",
-                "reference": "f640ac1bdddff06ea333a920c95bbad8872429ab",
+                "url": "https://api.github.com/repos/Masterminds/html5-php/zipball/a1e7a2f88ee13635d86fc61cfbdf2306a76ddfc7",
+                "reference": "a1e7a2f88ee13635d86fc61cfbdf2306a76ddfc7",
                 "shasum": ""
             },
             "require": {
-                "ext-ctype": "*",
                 "ext-dom": "*",
-                "ext-libxml": "*",
-                "php": ">=5.3.0"
+                "php": ">=7.4"
             },
             "require-dev": {
-                "phpunit/phpunit": "^4.8.35 || ^5.7.21 || ^6 || ^7"
+                "phpunit/phpunit": "^6 || ^7 || ^8 || ^9 || ^10"
             },
-            "time": "2021-07-01T14:25:37+00:00",
+            "time": "2026-08-18T06:18:41+00:00",
             "type": "library",
             "extra": {
                 "branch-alias": {
@@ -68,44 +66,47 @@
             ],
             "support": {
                 "issues": "https://github.com/Masterminds/html5-php/issues",
-                "source": "https://github.com/Masterminds/html5-php/tree/2.7.5"
+                "source": "https://github.com/Masterminds/html5-php/tree/2.11.0"
             },
             "install-path": "../masterminds/html5"
         },
         {
             "name": "mundschenk-at/php-typography",
-            "version": "v6.6.0",
-            "version_normalized": "6.6.0.0",
+            "version": "v7.0.0",
+            "version_normalized": "7.0.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/mundschenk-at/php-typography.git",
-                "reference": "67af39c936751f96a959b9bf211044512675283c"
+                "reference": "3be68a237594e7ac67f9a95779d6d160c5378c56"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/mundschenk-at/php-typography/zipball/67af39c936751f96a959b9bf211044512675283c",
-                "reference": "67af39c936751f96a959b9bf211044512675283c",
+                "url": "https://api.github.com/repos/mundschenk-at/php-typography/zipball/3be68a237594e7ac67f9a95779d6d160c5378c56",
+                "reference": "3be68a237594e7ac67f9a95779d6d160c5378c56",
                 "shasum": ""
             },
             "require": {
                 "ext-mbstring": "*",
                 "ext-pcre": "*",
                 "masterminds/html5": "^2.5.0",
-                "php": ">=5.6.0"
+                "php": ">=8.1.0"
             },
             "require-dev": {
                 "brain/monkey": "^2.2.0",
-                "dealerdirect/phpcodesniffer-composer-installer": "^0.6",
+                "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
                 "ext-curl": "*",
-                "mundschenk-at/phpunit-cross-version": "dev-master",
+                "mikey179/vfsstream": "~1",
+                "mundschenk-at/phpunit-cross-version": "dev-main",
                 "phpbench/phpbench": "^0.17||^1.0@dev",
                 "phpcompatibility/php-compatibility": "^9.0",
-                "phpstan/phpstan": "^0.12",
-                "phpunit/phpunit": "5.*||6.*||7.*|8.*|9.*",
-                "squizlabs/php_codesniffer": "^3",
-                "wp-coding-standards/wpcs": "^2.0"
+                "phpstan/extension-installer": "^1.2",
+                "phpstan/phpstan": "^2",
+                "phpstan/phpstan-mockery": "^2",
+                "phpunit/phpunit": "9.*|10.*|11.*|12.*|13.*",
+                "squizlabs/php_codesniffer": "^3|^4",
+                "wp-coding-standards/wpcs": "^3"
             },
-            "time": "2020-04-05T12:14:12+00:00",
+            "time": "2026-08-09T16:41:07+00:00",
             "bin": [
                 "src/bin/update-patterns.php",
                 "src/bin/update-iana.php"
@@ -138,11 +139,11 @@
             "description": "A PHP library for improving your web typography",
             "support": {
                 "issues": "https://github.com/mundschenk-at/php-typography/issues",
-                "source": "https://github.com/mundschenk-at/php-typography/tree/v6.6.0"
+                "source": "https://github.com/mundschenk-at/php-typography/tree/v7.0.0"
             },
             "install-path": "../mundschenk-at/php-typography"
         }
     ],
-    "dev": true,
+    "dev": false,
     "dev-package-names": []
 }

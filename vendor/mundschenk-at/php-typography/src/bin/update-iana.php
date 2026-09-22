@@ -3,7 +3,7 @@
 /**
  *  This file is part of PHP-Typography.
  *
- *  Copyright 2017 Peter Putzer.
+ *  Copyright 2017-2022 Peter Putzer.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,16 +42,19 @@ if ( file_exists( $autoload ) ) {
 $source_file = 'https://data.iana.org/TLD/tlds-alpha-by-domain.txt';
 $target_file = dirname( __DIR__ ) . '/IANA/tlds-alpha-by-domain.txt';
 
-if ( ! file_exists( $source_file ) ) {
-	if ( 404 === File_Operations::get_http_response_code( $source_file ) ) {
-		echo "Error: unknown TLD file '{$source_file}'\n";
-		die( -3 );
-	}
+if ( ! file_exists( $source_file ) && 404 === File_Operations::get_http_response_code( $source_file ) ) {
+	echo "Error: unknown TLD file '{$source_file}'\n";
+	die( -3 );
 }
 
 try {
 	echo 'Trying to update IANA top-level domain list ...';
 	$domain_list = file_get_contents( $source_file );
+
+	if ( ! is_string( $domain_list ) ) {
+		echo " error retrieving TLD file '{$source_file}'\n";
+		die( -3 );
+	}
 
 	// Ensure directory exists.
 	if ( ! is_dir( dirname( $target_file ) ) ) {
