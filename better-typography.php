@@ -1,42 +1,46 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Grav\Plugin;
 
 use Composer\Autoload\ClassLoader;
+use Grav\Common\Config\Config;
 use Grav\Common\Grav;
+use Grav\Common\Page\Interfaces\PageInterface;
 use Grav\Common\Plugin;
-use PHP_Typography\PHP_Typography;
-use PHP_Typography\Settings;
-use Twig_SimpleFilter;
+use Grav\Plugin\BetterTypography\Typographer;
+use InvalidArgumentException;
+use Psr\Log\LoggerInterface;
+use RocketTheme\Toolbox\Event\Event;
+use RuntimeException;
+use Stringable;
+use Twig\TwigFilter;
 
 /**
- * Class BetterTypographyPlugin
+ * Applies typographic improvements (smart quotes, dashes, hyphenation, French spacing...) to the
+ * processed page content and exposes them as the `bettertypo` Twig filter.
  */
 class BetterTypographyPlugin extends Plugin
 {
+    public const FILTER_NAME = 'bettertypo';
+
+    private ?Typographer $typographer = null;
+
     /**
-     * @return array
-     *
-     * The getSubscribedEvents() gives the core a list of events
-     *     that the plugin wants to listen to. The key of each
-     *     array section is the event that the plugin listens to
-     *     and the value (in the form of an array) contains the
-     *     callable (or function) as well as the priority. The
-     *     higher the number the higher the priority.
+     * @return array<string, array<int, array{string, int}>>
      */
     public static function getSubscribedEvents(): array
     {
         return [
             'onPluginsInitialized' => [
-                // Uncomment following line when plugin requires Grav < 1.7
-                // ['autoload', 100000],
                 ['onPluginsInitialized', 0],
             ],
         ];
     }
 
     /**
-     * Composer autoload
+     * Composer autoload (called by Grav >= 1.7 before onPluginsInitialized).
      */
     public function autoload(): ClassLoader
     {
@@ -48,47 +52,84 @@ class BetterTypographyPlugin extends Plugin
      */
     public function onPluginsInitialized(): void
     {
-        // Don't proceed if we are in the admin plugin
+        // Nothing to do in the admin (admin / admin2): pages are only rendered on the frontend.
         if ($this->isAdmin()) {
             return;
         }
-        // Enable the main events we are interested in
+
         $this->enable([
-            // Put your main events here
+            // Run late (after shortcode-core) so shortcodes are already expanded.
             'onPageContentProcessed' => ['onPageContentProcessed', -20],
             'onTwigInitialized' => ['onTwigInitialized', 0],
+            // Grav 2 only: allow the filter inside sandboxed page content.
+            'onBuildTwigSandboxPolicy' => ['onBuildTwigSandboxPolicy', 0],
         ]);
+    }
+
+    /**
+     * Grav 2 runs Twig found in page content inside a sandbox with an allow-list of filters:
+     * register `bettertypo` there so `{{ 'text'|bettertypo }}` works in content, not only in
+     * theme templates. Site owners can still refuse it via `security.twig_sandbox.denied_filters`.
+     */
+    public function onBuildTwigSandboxPolicy(Event $event): void
+    {
+        $filters = $event['filters'] ?? [];
+        if (! is_array($filters)) {
+            return;
+        }
+
+        if (! in_array(self::FILTER_NAME, $filters, true)) {
+            $filters[] = self::FILTER_NAME;
+            $event['filters'] = $filters;
+        }
     }
 
     public function onTwigInitialized(): void
     {
+        // The filter returns HTML (e.g. <sup class="ordinal">) built from HTML input, so it is
+        // marked safe: never feed it untrusted (user submitted) strings.
         $this->grav['twig']->twig()->addFilter(
-            new Twig_SimpleFilter('bettertypo', $this->betterTypo(...))
+            new TwigFilter('bettertypo', $this->betterTypo(...), [
+                'is_safe' => ['html'],
+            ])
         );
     }
 
-    public function onPageContentProcessed(): void
+    /**
+     * Improves the typography of the page whose content has just been processed
+     * (main page, modular sub-pages and collection items alike).
+     */
+    public function onPageContentProcessed(Event $event): void
     {
-        $content = $this->grav['page']->content();
-        $content = $this->betterTypo($content);
-        $this->grav['page']->setRawContent($content);
+        $page = $event['page'] ?? null;
+        if (! $page instanceof PageInterface) {
+            return;
+        }
+
+        $content = $page->getRawContent();
+        if (! is_string($content) || $content === '') {
+            return;
+        }
+
+        $language = $page->language();
+        $page->setRawContent(
+            $this->typographer()
+                ->process($content, is_string($language) ? $language : $this->currentLanguage())
+        );
     }
 
     /**
-     * get all supported languages set in System / Languages
+     * All supported languages set in System > Languages (used by blueprints.yaml).
+     *
+     * @return array<string, string>
      */
     public static function languageList(): array
     {
-        /** @var Grav $grav */
-        $grav = Grav::instance();
-        /** @var Data $config */
-        $config = $grav['config'];
-
         $languages = [
-            'default' => 'Default',
+            Typographer::DEFAULT_LANGUAGE => 'Default',
         ];
 
-        foreach ($config->get('system.languages.supported', []) as $language) {
+        foreach (self::supportedLanguages() as $language) {
             $languages[$language] = $language;
         }
 
@@ -96,87 +137,86 @@ class BetterTypographyPlugin extends Plugin
     }
 
     /**
-     * maxLanguages
+     * Maximum number of entries of the per-language list (used by blueprints.yaml).
      */
     public static function maxLanguages(): int
     {
-        /** @var Grav $grav */
-        $grav = Grav::instance();
-        /** @var Data $config */
-        $config = $grav['config'];
-
-        return count($config->get('system.languages.supported', [])) + 1;
+        return count(self::supportedLanguages()) + 1;
     }
 
     /**
-     * @param  string (optional) $language
+     * `bettertypo` Twig filter.
+     *
+     * @param mixed       $string   The (trusted) HTML or text to improve.
+     * @param string|null $language Language whose settings apply; defaults to the current page language.
      */
-    public function betterTypo(string $string, ?string $language = null): string
+    public function betterTypo(mixed $string, ?string $language = null): string
     {
-        $PHPTypoSettings = new Settings(false);
-        $PHPTypoSettings->set_smart_ordinal_suffix(true);
-        $PHPTypoSettings->set_smart_ellipses(true);
-        $PHPTypoSettings->set_smart_marks(true);
-        $PHPTypoSettings->set_smart_exponents(true);
-        $PHPTypoSettings->set_smart_fractions(true);
-        $PHPTypoSettings->set_smart_area_units(true);
-        $PHPTypoSettings->set_single_character_word_spacing(true);
-        $PHPTypoSettings->set_fraction_spacing(true);
-        $PHPTypoSettings->set_unit_spacing(true);
-        $PHPTypoSettings->set_numbered_abbreviation_spacing(true);
-        $PHPTypoSettings->set_dewidow(true);
-
-        if (! $language) {
-            $language = $this->grav['page']->language() ?? $this->grav['language']->getLanguage();
-            if (! $language) {
-                $language = $this->grav['config']->get('site.default_lang');
-            }
+        if ($string === null) {
+            return '';
         }
 
-        $betterTypoSettings = [];
-
-        foreach ($this->config->get('plugins.better-typography.perLanguageSettings', []) as $perLanguageSettings) {
-            $betterTypoSettings[$perLanguageSettings['language']] = $perLanguageSettings;
+        if (! is_scalar($string) && ! $string instanceof Stringable) {
+            throw new InvalidArgumentException(sprintf('The "bettertypo" filter expects a string, %s given.', get_debug_type($string)));
         }
 
-        $betterTypoLanguage = array_key_exists($language, $betterTypoSettings) ? $language : 'default';
+        return $this->typographer()
+            ->process((string) $string, $language ?? $this->currentLanguage());
+    }
 
-        $useSmartQuotes = $betterTypoSettings[$betterTypoLanguage]['useSmartQuotes'] ?? true;
-        $PHPTypoSettings->set_smart_quotes($useSmartQuotes);
-        if ($useSmartQuotes) {
-            $smartQuotesPrimary = $betterTypoSettings[$betterTypoLanguage]['smartQuotesStyle'] ?? 'doubleCurled';
-            $PHPTypoSettings->set_smart_quotes_primary($smartQuotesPrimary);
-            $smartQuotesSecondary = $betterTypoSettings[$betterTypoLanguage]['smartQuotesStyleSecondary'] ?? 'singleCurled';
-            $PHPTypoSettings->set_smart_quotes_secondary($smartQuotesSecondary);
+    private function typographer(): Typographer
+    {
+        if (! $this->typographer instanceof Typographer) {
+            $settings = $this->pluginConfig()
+                ->get('plugins.better-typography.perLanguageSettings');
+            $logger = $this->grav['log'] ?? null;
+
+            $this->typographer = new Typographer(
+                is_iterable($settings) ? $settings : [],
+                $logger instanceof LoggerInterface ? $logger : null,
+            );
         }
 
-        $useSmartDashes = $betterTypoSettings[$betterTypoLanguage]['useSmartDashes'] ?? true;
-        $PHPTypoSettings->set_smart_dashes($useSmartDashes);
-        if ($useSmartDashes) {
-            $smartDashesStyle = $betterTypoSettings[$betterTypoLanguage]['smartDashesStyle'] ?? 'international';
-            $PHPTypoSettings->set_smart_dashes_style($smartDashesStyle);
+        return $this->typographer;
+    }
+
+    /**
+     * Language of the current page, else the active/default site language, else null ("default" settings).
+     */
+    private function currentLanguage(): ?string
+    {
+        $page = $this->grav['page'] ?? null;
+        $language = $page instanceof PageInterface ? $page->language() : null;
+
+        if (! is_string($language) || $language === '') {
+            $language = $this->grav['language']->getLanguage();
         }
 
-        $applyHyphenations = $betterTypoSettings[$betterTypoLanguage]['applyHyphenations'] ?? false;
-        $PHPTypoSettings->set_hyphenation($applyHyphenations);
-        if ($applyHyphenations) {
-            $PHPTypoSettings->set_hyphenation_language($language);
+        if (! is_string($language) || $language === '') {
+            $config = $this->pluginConfig();
+            $language = $config->get('system.languages.default_lang') ?? $config->get('site.default_lang');
         }
 
-        $applyFrenchSpecific = $betterTypoSettings[$betterTypoLanguage]['applyFrenchSpecific'] ?? false;
-        if ($applyFrenchSpecific && $language === 'fr') {
-            $PHPTypoSettings->set_french_punctuation_spacing(true);
-            $PHPTypoSettings->set_smart_ordinal_suffix_match_roman_numerals(true);
+        return is_string($language) && $language !== '' ? $language : null;
+    }
+
+    private function pluginConfig(): Config
+    {
+        $config = $this->config ?? Grav::instance()['config'];
+        if (! $config instanceof Config) {
+            throw new RuntimeException('Grav configuration is not available.');
         }
 
-        $useSmartDiacritics = $betterTypoSettings[$betterTypoLanguage]['useSmartDiacritics'] ?? false;
-        if ($useSmartDiacritics && $language === $betterTypoSettings[$betterTypoLanguage]['smartDiacriticsLanguage']) {
-            $PHPTypoSettings->set_smart_diacritics(true);
-            $PHPTypoSettings->set_diacritic_language($language);
-        }
+        return $config;
+    }
 
-        $PHPTypo = new PHP_Typography();
+    /**
+     * @return array<int, string>
+     */
+    private static function supportedLanguages(): array
+    {
+        $supported = Grav::instance()['config']->get('system.languages.supported');
 
-        return $PHPTypo->process($string, $PHPTypoSettings);
+        return array_values(array_filter((array) $supported, is_string(...)));
     }
 }

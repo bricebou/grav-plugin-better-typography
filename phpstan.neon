@@ -10,6 +10,7 @@ parameters:
         - better-typography.php
         - classes
     excludePaths:
-        - vendor
+        analyse:
+            - vendor
     treatPhpDocTypesAsCertain: false
     reportUnmatchedIgnoredErrors: true
