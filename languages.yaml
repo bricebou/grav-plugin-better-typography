@@ -14,6 +14,9 @@ en:
     DASHES_INTERNATIONAL: '-- & --- to – & —'
     FRENCH: 'French language'
     FRENCH_HELP: 'Apply typographic improvements specific to french language, such as double punctuation spacing and roman numerals.'
+    SINGLE_CHARACTER_WORD_SPACING: 'Single character word spacing'
+    SINGLE_CHARACTER_WORD_SPACING_HELP: 'Glue one-letter words to the following word with a non-breaking space ("a&nbsp;word"). This is not a French rule ("à votre service"): "Automatic" disables it when the French rules are applied.'
+    SINGLE_CHARACTER_WORD_SPACING_AUTO: 'Automatic'
 
 fr:
   PLUGIN_BETTER_TYPOGRAPHY:
@@ -30,6 +33,9 @@ fr:
     DASHES_TRADITIONAL_US: "-- & --- vers —"
     DASHES_INTERNATIONAL: '-- & --- vers – & —'
     FRENCH: 'Langue française'
-    FRENCH_HELP: 'Amélioration typographiques spécifiques au français: espace fine insécable avant les ponctuation double et gestion des suffixe de siècles en chiffres romains.'
+    FRENCH_HELP: 'Améliorations typographiques spécifiques au français : espace fine insécable avant les ponctuations doubles et gestion des suffixes de siècles en chiffres romains.'
+    SINGLE_CHARACTER_WORD_SPACING: 'Espacement des mots d''une lettre'
+    SINGLE_CHARACTER_WORD_SPACING_HELP: 'Lie les mots d''une lettre au mot suivant par une espace insécable (« a&nbsp;word »). Ce n''est pas une règle française (« à votre service ») : « Automatique » le désactive lorsque les règles françaises sont appliquées.'
+    SINGLE_CHARACTER_WORD_SPACING_AUTO: 'Automatique'
 
 

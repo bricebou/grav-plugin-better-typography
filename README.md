@@ -52,6 +52,7 @@ perLanguageSettings:
     smartDashesStyle: international           # 'international' or 'traditionalUS'
     applyHyphenations: false
     applyFrenchSpecific: false                # apply specific french typographic rules such as unbreakable space before double punctuation (?, !, :, ;) and XVI<sup>e</sup> siècle
+    singleCharacterWordSpacing: auto          # 'auto', 'enabled' or 'disabled': glue one-letter words to the next word ("a&nbsp;word"); 'auto' = enabled unless applyFrenchSpecific is on ("à votre service" keeps its space)
     useSmartDiacritics: false                 # replace "creme brulee" with "crème brûlée". Only available for de-DE and en-US languages
     smartDiacriticsLanguage:                  # de-DE or en-US: the replacement list to use when useSmartDiacritics is enabled
 
@@ -63,7 +64,8 @@ and any language without an entry uses the `default` one.
 
 Notes:
 
-- Code samples are never touched: `<code>`, `<pre>`, `<kbd>`, `<script>`, `<style>`, form controls... keep their content.
+- Code samples and scripts are never touched: `<code>`, `<pre>`, `<kbd>`, `<script>`, `<style>`, form controls... keep their content.
+- One-letter words are glued to the next word (`a&nbsp;word`) unless `singleCharacterWordSpacing` is `disabled`, or `auto` with the French rules enabled (French typography keeps the plain space in "à votre service").
 - Hyphenation uses the pattern file matching the page language (`fr`, `de`, `en` → `en-US`...). Languages without
   patterns are left unhyphenated and a warning is written to the Grav log.
 - Invalid quote or dash style names (for example in a hand-written configuration file) fall back to the default

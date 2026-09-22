@@ -143,7 +143,6 @@ final class Typographer
         $settings->set_smart_exponents(true);
         $settings->set_smart_fractions(true);
         $settings->set_smart_area_units(true);
-        $settings->set_single_character_word_spacing(true);
         $settings->set_fraction_spacing(true);
         $settings->set_unit_spacing(true);
         $settings->set_units();
@@ -191,6 +190,12 @@ final class Typographer
         $applyFrench = $isFrench && $this->toBool($config['applyFrenchSpecific'] ?? null, false);
         $settings->set_french_punctuation_spacing($applyFrench);
         $settings->set_smart_ordinal_suffix_match_roman_numerals($applyFrench);
+
+        // Glue one-letter words to the next word ("a&nbsp;word"). Not a French rule ("à votre service"
+        // must keep its plain space): "auto" means enabled unless the French rules are applied.
+        $settings->set_single_character_word_spacing(
+            $this->singleCharacterWordSpacing($config['singleCharacterWordSpacing'] ?? null, $applyFrench)
+        );
 
         // Diacritics ("creme brulee" => "crème brûlée"), only available for a few languages.
         $diacriticsLanguage = $this->toBool($config['useSmartDiacritics'] ?? null, false)
@@ -285,6 +290,17 @@ final class Typographer
         $this->warnOnce(sprintf('Unknown diacritics language "%s" (language "%s"); diacritics skipped.', $wanted, $language));
 
         return null;
+    }
+
+    private function singleCharacterWordSpacing(mixed $configured, bool $applyFrench): bool
+    {
+        $mode = is_string($configured) ? strtolower(trim($configured)) : '';
+
+        return match ($mode) {
+            'enabled', 'on', 'true', '1' => true,
+            'disabled', 'off', 'false', '0' => false,
+            default => ! $applyFrench,
+        };
     }
 
     /**
