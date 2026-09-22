@@ -31,6 +31,7 @@ class ComposerStaticInit95581568563c28d09df0730ac2db8bc9
     public static $classMap = array (
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
         'Grav\\Plugin\\BetterTypographyPlugin' => __DIR__ . '/../..' . '/better-typography.php',
+        'Grav\\Plugin\\BetterTypography\\Typographer' => __DIR__ . '/../..' . '/classes/Typographer.php',
         'Masterminds\\HTML5' => __DIR__ . '/..' . '/masterminds/html5/src/HTML5.php',
         'Masterminds\\HTML5\\Elements' => __DIR__ . '/..' . '/masterminds/html5/src/HTML5/Elements.php',
         'Masterminds\\HTML5\\Entities' => __DIR__ . '/..' . '/masterminds/html5/src/HTML5/Entities.php',
