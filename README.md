@@ -70,6 +70,8 @@ Notes:
   patterns are left unhyphenated and a warning is written to the Grav log.
 - Invalid quote or dash style names (for example in a hand-written configuration file) fall back to the default
   style instead of breaking the page; a warning is written to the Grav log.
+- A fragment whose HTML cannot be parsed is left untouched, with a warning in the Grav log.
+- On a monolingual site the pages have no language: the `default` entry applies, including its French rules toggle.
 
 Note that if you use the Admin Plugin, a file with your configuration named better-typography.yaml will be saved in the `user/config/plugins/`-folder once the configuration is saved in the Admin.
 
@@ -91,12 +93,14 @@ You can pass an argument to the `bettertypo` Twig filter :
 {{ page.header.title|bettertypo('fr') }}
 ```
 
-The filter transforms HTML into HTML and its output is marked as *safe* for Twig's auto-escaping: only pass it
-content you trust (page content, headers, translations...), never raw user input such as form submissions.
+The filter transforms HTML into HTML and its output is marked as *safe* for Twig's auto-escaping. When
+auto-escaping is on (always on Grav 2), plain strings are HTML-escaped *before* the typography runs, so untrusted
+input cannot inject markup; values that are already safe (`page.content`, `...|raw`) are processed as HTML. To
+improve a string that intentionally contains HTML, mark it safe first: `{{ page.header.intro|raw|bettertypo }}`.
 
 On Grav 2 the filter is also registered in the Twig content sandbox, so it can be used inside page content when
-`process: { twig: true }` is enabled. Set `twig_first: true` on such pages, otherwise the smart quotes are applied
-before Twig runs and rewrite the quotes inside your Twig expressions. A site can refuse the filter in content with
+`process: { twig: true }` is enabled. Twig tags left in the content are protected while the page content is
+processed, whatever the `twig_first` setting. A site can refuse the filter in content with
 `security.twig_sandbox.denied_filters: [bettertypo]`.
 
 ## Development

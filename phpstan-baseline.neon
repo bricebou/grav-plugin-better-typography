@@ -49,6 +49,12 @@ parameters:
 			path: better-typography.php
 
 		-
+			message: '#^Call to method header\(\) on an unknown class Grav\\Common\\Page\\Interfaces\\PageInterface\.$#'
+			identifier: class.notFound
+			count: 1
+			path: better-typography.php
+
+		-
 			message: '#^Call to method language\(\) on an unknown class Grav\\Common\\Page\\Interfaces\\PageInterface\.$#'
 			identifier: class.notFound
 			count: 2
@@ -56,6 +62,12 @@ parameters:
 
 		-
 			message: '#^Call to method setRawContent\(\) on an unknown class Grav\\Common\\Page\\Interfaces\\PageInterface\.$#'
+			identifier: class.notFound
+			count: 1
+			path: better-typography.php
+
+		-
+			message: '#^Call to method shouldProcess\(\) on an unknown class Grav\\Common\\Page\\Interfaces\\PageInterface\.$#'
 			identifier: class.notFound
 			count: 1
 			path: better-typography.php
@@ -76,12 +88,6 @@ parameters:
 			message: '#^Class Grav\\Common\\Page\\Interfaces\\PageInterface not found\.$#'
 			identifier: class.notFound
 			count: 2
-			path: better-typography.php
-
-		-
-			message: '#^Class Psr\\Log\\LoggerInterface not found\.$#'
-			identifier: class.notFound
-			count: 1
 			path: better-typography.php
 
 		-
@@ -109,19 +115,7 @@ parameters:
 			path: better-typography.php
 
 		-
-			message: '#^Call to method warning\(\) on an unknown class Psr\\Log\\LoggerInterface\.$#'
+			message: '#^Parameter \$page of method Grav\\Plugin\\BetterTypographyPlugin\:\:processesTwigLater\(\) has invalid type Grav\\Common\\Page\\Interfaces\\PageInterface\.$#'
 			identifier: class.notFound
 			count: 1
-			path: classes/Typographer.php
-
-		-
-			message: '#^Parameter \$logger of method Grav\\Plugin\\BetterTypography\\Typographer\:\:__construct\(\) has invalid type Psr\\Log\\LoggerInterface\.$#'
-			identifier: class.notFound
-			count: 1
-			path: classes/Typographer.php
-
-		-
-			message: '#^Property Grav\\Plugin\\BetterTypography\\Typographer\:\:\$logger has unknown class Psr\\Log\\LoggerInterface as its type\.$#'
-			identifier: class.notFound
-			count: 1
-			path: classes/Typographer.php
+			path: better-typography.php

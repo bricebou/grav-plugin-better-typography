@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Grav\Plugin\BetterTypography;
 
+use Closure;
 use PHP_Typography\Exceptions\Invalid_Style_Exception;
 use PHP_Typography\PHP_Typography;
 use PHP_Typography\Settings;
 use PHP_Typography\Settings\Dash_Style;
 use PHP_Typography\Settings\Quote_Style;
-use Psr\Log\LoggerInterface;
 
 /**
  * Turns the plugin configuration into PHP-Typography settings and processes HTML fragments.
@@ -30,7 +30,6 @@ final class Typographer
     private const HYPHENATION_ALIASES = [
         'en' => 'en-US',
         'el' => 'el-Mono',
-        'la' => 'la',
         'mn' => 'mn-Cyrl',
         'sh' => 'sh-Latn',
         'sr' => 'sr-Cyrl',
@@ -59,11 +58,19 @@ final class Typographer
     private array $logged = [];
 
     /**
-     * @param iterable<mixed> $perLanguageSettings The raw `perLanguageSettings` list of the plugin configuration.
+     * Twig delimiters, protected while the typography runs when Twig is processed after us.
+     */
+    private const TWIG_PATTERN = '/\{#.*?#\}|\{%.*?%\}|\{\{.*?\}\}/s';
+
+    private const PLACEHOLDER_PATTERN = '/\x{27E6}(\d+)\x{27E7}/u';
+
+    /**
+     * @param iterable<mixed>              $perLanguageSettings The raw `perLanguageSettings` list of the plugin configuration.
+     * @param (Closure(string): void)|null $warn                Receives configuration/processing warnings (typically the Grav logger).
      */
     public function __construct(
         iterable $perLanguageSettings,
-        private readonly ?LoggerInterface $logger = null,
+        private readonly ?Closure $warn = null,
     ) {
         foreach ($perLanguageSettings as $entry) {
             if (! is_array($entry)) {
@@ -77,8 +84,11 @@ final class Typographer
 
     /**
      * Applies the typographic rules configured for $language (or for "default") to an HTML fragment.
+     *
+     * With $preserveTwig, Twig tags/expressions/comments still present in the fragment (Grav processes
+     * content Twig after `onPageContentProcessed` unless `twig_first` is set) are left untouched.
      */
-    public function process(string $html, ?string $language = null): string
+    public function process(string $html, ?string $language = null, bool $preserveTwig = false): string
     {
         if (trim($html) === '') {
             return $html;
@@ -87,8 +97,28 @@ final class Typographer
         $language = self::normalizeLanguage($language) ?? self::DEFAULT_LANGUAGE;
         $this->settingsCache[$language] ??= $this->buildSettings($language);
 
-        return $this->engine()
+        /** @var list<string> $twig */
+        $twig = [];
+        if ($preserveTwig) {
+            $html = preg_replace_callback(self::TWIG_PATTERN, static function (array $match) use (&$twig): string {
+                $twig[] = $match[0];
+
+                return "\u{27E6}" . (count($twig) - 1) . "\u{27E7}";
+            }, $html) ?? $html;
+        }
+
+        $processed = (string) $this->engine()
             ->process($html, $this->settingsCache[$language]);
+
+        if ($twig !== []) {
+            return preg_replace_callback(
+                self::PLACEHOLDER_PATTERN,
+                static fn (array $match): string => $twig[(int) $match[1]] ?? $match[0],
+                $processed
+            ) ?? $processed;
+        }
+
+        return $processed;
     }
 
     /**
@@ -134,7 +164,17 @@ final class Typographer
         $settings->set_tags_to_ignore();
         $settings->set_classes_to_ignore();
         $settings->set_ids_to_ignore();
+        // Malformed HTML: leave the fragment untouched (library behaviour) but say so in the log.
         $settings->set_ignore_parser_errors(false);
+        $settings->set_parser_errors_handler(function (array $errors) use ($language): array {
+            $this->warnOnce(sprintf(
+                'HTML parse error in a "%s" fragment, typography skipped for it: %s',
+                $language,
+                (string) (reset($errors) ?: 'unknown error'),
+            ));
+
+            return $errors;
+        });
 
         // Always-on improvements.
         $settings->set_smart_ordinal_suffix(true);
@@ -186,7 +226,8 @@ final class Typographer
         }
 
         // French: narrow no-break space before double punctuation, "XVIe" => XVI<sup>e</sup>.
-        $isFrench = $this->primarySubtag($language) === 'fr';
+        // The "default" entry is the only one a monolingual site reaches, so its toggle is trusted.
+        $isFrench = $this->primarySubtag($language) === 'fr' || $language === self::DEFAULT_LANGUAGE;
         $applyFrench = $isFrench && $this->toBool($config['applyFrenchSpecific'] ?? null, false);
         $settings->set_french_punctuation_spacing($applyFrench);
         $settings->set_smart_ordinal_suffix_match_roman_numerals($applyFrench);
@@ -294,11 +335,15 @@ final class Typographer
 
     private function singleCharacterWordSpacing(mixed $configured, bool $applyFrench): bool
     {
+        if (is_bool($configured) || is_int($configured)) {
+            return $this->toBool($configured, ! $applyFrench);
+        }
+
         $mode = is_string($configured) ? strtolower(trim($configured)) : '';
 
         return match ($mode) {
-            'enabled', 'on', 'true', '1' => true,
-            'disabled', 'off', 'false', '0' => false,
+            'enabled', 'on', 'true', 'yes', '1' => true,
+            'disabled', 'off', 'false', 'no', '0' => false,
             default => ! $applyFrench,
         };
     }
@@ -332,6 +377,8 @@ final class Typographer
         }
 
         $this->logged[$message] = true;
-        $this->logger?->warning('[better-typography] ' . $message);
+        if ($this->warn instanceof Closure) {
+            ($this->warn)('[better-typography] ' . $message);
+        }
     }
 }

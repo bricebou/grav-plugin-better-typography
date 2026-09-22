@@ -11,7 +11,6 @@ use Grav\Common\Page\Interfaces\PageInterface;
 use Grav\Common\Plugin;
 use Grav\Plugin\BetterTypography\Typographer;
 use InvalidArgumentException;
-use Psr\Log\LoggerInterface;
 use RocketTheme\Toolbox\Event\Event;
 use RuntimeException;
 use Stringable;
@@ -86,10 +85,12 @@ class BetterTypographyPlugin extends Plugin
 
     public function onTwigInitialized(): void
     {
-        // The filter returns HTML (e.g. <sup class="ordinal">) built from HTML input, so it is
-        // marked safe: never feed it untrusted (user submitted) strings.
+        // The filter returns HTML (e.g. <sup class="ordinal">), so its output is safe; with
+        // auto-escaping on (always in Grav 2) plain strings are escaped *before* processing while
+        // already-safe values (page.content, |raw) pass through: untrusted input cannot inject markup.
         $this->grav['twig']->twig()->addFilter(
-            new TwigFilter('bettertypo', $this->betterTypo(...), [
+            new TwigFilter(self::FILTER_NAME, $this->betterTypo(...), [
+                'pre_escape' => 'html',
                 'is_safe' => ['html'],
             ])
         );
@@ -112,10 +113,30 @@ class BetterTypographyPlugin extends Plugin
         }
 
         $language = $page->language();
-        $page->setRawContent(
-            $this->typographer()
-                ->process($content, is_string($language) ? $language : $this->currentLanguage())
-        );
+        $page->setRawContent($this->typographer()->process(
+            $content,
+            is_string($language) ? $language : $this->currentLanguage(),
+            $this->processesTwigLater($page),
+        ));
+    }
+
+    /**
+     * Grav runs content Twig *after* this event unless `twig_first` is set: the Twig tags are still in
+     * the content and must not be rewritten (smart quotes inside `{{ }}` break the template).
+     */
+    private function processesTwigLater(PageInterface $page): bool
+    {
+        if (! $page->shouldProcess('twig')) {
+            return false;
+        }
+
+        $header = $page->header();
+        $twigFirst = is_object($header) && property_exists($header, 'twig_first')
+            ? $header->twig_first
+            : $this->pluginConfig()
+                ->get('system.pages.twig_first', false);
+
+        return ! filter_var($twigFirst, FILTER_VALIDATE_BOOL);
     }
 
     /**
@@ -170,11 +191,13 @@ class BetterTypographyPlugin extends Plugin
             $settings = $this->pluginConfig()
                 ->get('plugins.better-typography.perLanguageSettings');
             $logger = $this->grav['log'] ?? null;
+            $warn = is_object($logger) && method_exists($logger, 'warning')
+                ? static function (string $message) use ($logger): void {
+                    $logger->warning($message);
+                }
+            : null;
 
-            $this->typographer = new Typographer(
-                is_iterable($settings) ? $settings : [],
-                $logger instanceof LoggerInterface ? $logger : null,
-            );
+            $this->typographer = new Typographer(is_iterable($settings) ? $settings : [], $warn);
         }
 
         return $this->typographer;
@@ -193,8 +216,8 @@ class BetterTypographyPlugin extends Plugin
         }
 
         if (! is_string($language) || $language === '') {
-            $config = $this->pluginConfig();
-            $language = $config->get('system.languages.default_lang') ?? $config->get('site.default_lang');
+            $language = $this->pluginConfig()
+                ->get('system.languages.default_lang');
         }
 
         return is_string($language) && $language !== '' ? $language : null;
