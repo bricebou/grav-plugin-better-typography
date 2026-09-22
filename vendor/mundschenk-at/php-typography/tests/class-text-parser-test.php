@@ -2,7 +2,7 @@
 /**
  *  This file is part of PHP-Typography.
  *
- *  Copyright 2015-2020 Peter Putzer.
+ *  Copyright 2015-2024 Peter Putzer.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,8 +24,10 @@
 
 namespace PHP_Typography\Tests;
 
-use PHP_Typography\Text_Parser\Token;
+use PHP_Typography\Exceptions\Invalid_Encoding_Exception;
+
 use PHP_Typography\Text_Parser;
+use PHP_Typography\Text_Parser\Token;
 
 /**
  * Unit test for \PHP_Typography\Text_Parser class.
@@ -38,62 +40,30 @@ use PHP_Typography\Text_Parser;
  * @uses PHP_Typography\Strings::functions
  */
 class Text_Parser_Test extends Testcase {
-	/**
-	 * The Text_Parser fixture.
-	 *
-	 * @var Text_Parser
-	 */
-	protected $parser;
-
-	/**
-	 * Sets up the fixture, for example, opens a network connection.
-	 * This method is called before a test is executed.
-	 */
-	protected function set_up() {
-		parent::set_up();
-
-		$this->parser = new \PHP_Typography\Text_Parser();
-	}
-
-	/**
-	 * Test constructor.
-	 *
-	 * @covers ::__construct
-	 */
-	public function test_constructor() {
-		$parser = new Text_Parser();
-
-		$this->assert_attribute_count( 0, 'text', $parser );
-		$this->assert_attribute_same( 'strtoupper', 'current_strtoupper', $parser );
-	}
 
 	/**
 	 * Test load.
 	 *
-	 * @covers ::load
+	 * @covers ::__construct
 	 * @covers ::tokenize
 	 * @covers ::parse_ambiguous_token
-	 * @covers ::is_preceeded_by
-	 * @covers ::is_not_preceeded_by
+	 * @covers ::is_preceded_by
+	 * @covers ::is_not_preceded_by
 	 *
 	 * @uses ::get_all
 	 */
 	public function test_load() {
-		$too_long = 'A really long string with a word that is wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwway too long.';
-
-		$still_too_long = 'A really long string with a word that is aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaalmost too long.';
-
+		$too_long        = 'A really long string with a word that is wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwway too long.';
+		$still_too_long  = 'A really long string with a word that is aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaalmost too long.';
 		$almost_too_long = 'A really long string with a word that is aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaalmost too long.';
 
-		$parser = $this->parser;
-
-		// Security check.
-		$this->assertFalse( $parser->load( $too_long ) );
-		$this->assertFalse( $parser->load( $still_too_long ) );
-		$this->assertTrue( $parser->load( $almost_too_long ) );
+		// Previously, we didn't allow really long strings, but this is unnecessary with PHP.
+		$this->assertInstanceOf( Text_Parser::class, new Text_Parser( $too_long ) );
+		$this->assertInstanceOf( Text_Parser::class, new Text_Parser( $still_too_long ) );
+		$this->assertInstanceOf( Text_Parser::class, new Text_Parser( $almost_too_long ) );
 
 		$interesting = 'Quoth the raven, "nevermore"! Äöüß?';
-		$this->assertTrue( $parser->load( $interesting ) );
+		$parser      = new Text_Parser( $interesting );
 
 		$tokens = $parser->get_all();
 
@@ -108,19 +78,17 @@ class Text_Parser_Test extends Testcase {
 	/**
 	 * Test load with email address.
 	 *
-	 * @covers ::load
+	 * @covers ::__construct
 	 * @covers ::tokenize
 	 * @covers ::parse_ambiguous_token
-	 * @covers ::is_preceeded_by
-	 * @covers ::is_not_preceeded_by
+	 * @covers ::is_preceded_by
+	 * @covers ::is_not_preceded_by
 	 *
 	 * @uses ::get_all
 	 */
 	public function test_load_email() {
-		$parser = $this->parser;
-
 		$string = 'Quoth the raven, "nevermore"! Please mail to someone@example.org.';
-		$this->assertTrue( $parser->load( $string ) );
+		$parser = new Text_Parser( $string );
 
 		$tokens = $parser->get_all();
 		$this->assertCount( 19, $tokens );
@@ -135,19 +103,17 @@ class Text_Parser_Test extends Testcase {
 	/**
 	 * Test load with URL.
 	 *
-	 * @covers ::load
+	 * @covers ::__construct
 	 * @covers ::tokenize
 	 * @covers ::parse_ambiguous_token
-	 * @covers ::is_preceeded_by
-	 * @covers ::is_not_preceeded_by
+	 * @covers ::is_preceded_by
+	 * @covers ::is_not_preceded_by
 	 *
 	 * @uses ::get_all
 	 */
 	public function test_load_url() {
-		$parser = $this->parser;
-
 		$string = 'Quoth the raven, "nevermore"! Please open http://example.org or foo:WordPress or foo:W@rdPress or @example or @:@:@:risk.';
-		$this->assertTrue( $parser->load( $string ) );
+		$parser = new Text_Parser( $string );
 
 		$tokens = $parser->get_all();
 		$this->assertCount( 33, $tokens );
@@ -166,19 +132,17 @@ class Text_Parser_Test extends Testcase {
 	/**
 	 * Test load with a compound word.
 	 *
-	 * @covers ::load
+	 * @covers ::__construct
 	 * @covers ::tokenize
 	 * @covers ::parse_ambiguous_token
-	 * @covers ::is_preceeded_by
-	 * @covers ::is_not_preceeded_by
+	 * @covers ::is_preceded_by
+	 * @covers ::is_not_preceded_by
 	 *
 	 * @uses ::get_all
 	 */
 	public function test_load_compound_word() {
-		$parser = $this->parser;
-
 		$string = 'Some don\'t trust the captain-owner.';
-		$this->assertTrue( $parser->load( $string ) );
+		$parser = new Text_Parser( $string );
 
 		$tokens = $parser->get_all();
 		$this->assertCount( 10, $tokens );
@@ -193,104 +157,33 @@ class Text_Parser_Test extends Testcase {
 	/**
 	 * Test load with an invalid encoding.
 	 *
-	 * @covers ::load
+	 * @covers ::__construct
 	 */
 	public function test_load_invalid_encoding() {
 		$string = mb_convert_encoding( 'Ein längerer String im falschen Zeichensatz', 'ISO-8859-2' );
-		$parser = $this->parser;
 
-		$this->assertFalse( $parser->load( $string ) );
+		$this->expect_exception( Invalid_Encoding_Exception::class );
+		new Text_Parser( $string );
 	}
 
 	/**
-	 * Test load with something that is not a string.
+	 * Test get_text.
 	 *
-	 * @covers ::load
-	 */
-	public function test_load_not_a_string() {
-		$parser = $this->parser;
-
-		$this->assertFalse( $parser->load( [] ) );
-	}
-
-	/**
-	 * Test reload.
+	 * @covers ::get_text
 	 *
-	 * @covers ::reload
-	 *
-	 * @depends test_load
-	 * @uses ::clear
-	 * @uses ::get_all
-	 * @uses ::is_not_preceeded_by
-	 * @uses ::is_preceeded_by
-	 * @uses ::load
-	 * @uses ::parse_ambiguous_token
-	 * @uses ::tokenize
-	 * @uses ::unload
-	 * @uses ::update
-
-	 * @param \PHP_Typography\Text_Parser $parser The parser to use.
-	 */
-	public function test_reload( Text_Parser $parser ) {
-		// Parsed string: 'Quoth the raven, "nevermore"! Äöüß?'.
-		$tokens     = $parser->get_all();
-		$tokens[12] = $tokens[12]->with_value( '' ); // "?".
-		$tokens[11] = $tokens[11]->with_value( '' ); // "Äöüß".
-		$tokens[10] = $tokens[10]->with_value( '' ); // " ".
-		$tokens[9]  = $tokens[9]->with_value( $tokens[9]->value . '!' );
-		$parser->update( $tokens );
-
-		$this->assertTrue( $parser->reload() );
-		$this->assertSame( 'Quoth the raven, "nevermore"!!', $parser->unload() );
-
-		return $parser;
-	}
-
-	/**
-	 * Test unload.
-	 *
-	 * @covers ::unload
-	 *
-	 * @uses ::clear
-	 * @uses ::is_not_preceeded_by
-	 * @uses ::is_preceeded_by
-	 * @uses ::load
+	 * @uses ::is_not_preceded_by
+	 * @uses ::is_preceded_by
+	 * @uses ::__construct
 	 * @uses ::parse_ambiguous_token
 	 * @uses ::tokenize
 	 */
-	public function test_unload() {
+	public function test_get_text() {
 		$interesting = 'Quoth the raven, "nevermore"! Äöüß?';
-		$parser      = $this->parser;
+		$parser      = new Text_Parser( $interesting );
 
-		$this->assertTrue( $parser->load( $interesting ) );
-
-		$result = $parser->unload();
+		$result = $parser->get_text();
 
 		$this->assertSame( $interesting, $result );
-		$this->assertNotSame( $result, $parser->unload() ); // the parser is empty now.
-	}
-
-	/**
-	 * Test clear.
-	 *
-	 * @covers ::clear
-	 *
-	 * @uses ::get_all
-	 * @uses ::is_not_preceeded_by
-	 * @uses ::is_preceeded_by
-	 * @uses ::load
-	 * @uses ::parse_ambiguous_token
-	 * @uses ::tokenize
-	 */
-	public function test_clear() {
-		$parser      = $this->parser;
-		$interesting = 'Quoth the raven, "nevermore"!';
-
-		$this->assertTrue( $parser->load( $interesting ) );
-		$this->assertGreaterThan( 0, count( $parser->get_all() ) );
-
-		$parser->clear();
-		$this->assertCount( 0, $parser->get_all() );
 	}
 
 	/**
@@ -298,19 +191,17 @@ class Text_Parser_Test extends Testcase {
 	 *
 	 * @covers ::update
 	 *
-	 * @uses ::clear
 	 * @uses ::get_all
-	 * @uses ::is_not_preceeded_by
-	 * @uses ::is_preceeded_by
-	 * @uses ::load
+	 * @uses ::is_not_preceded_by
+	 * @uses ::is_preceded_by
+	 * @uses ::__construct
 	 * @uses ::parse_ambiguous_token
 	 * @uses ::tokenize
-	 * @uses ::unload
+	 * @uses ::get_text
 	 */
 	public function test_update() {
-		$parser      = $this->parser;
 		$interesting = 'Quoth the raven, "nevermore"! Äöüß?';
-		$this->assertTrue( $parser->load( $interesting ) );
+		$parser      = new Text_Parser( $interesting );
 
 		$tokens     = $parser->get_all();
 		$tokens[12] = $tokens[12]->with_value( '' ); // "?".
@@ -319,7 +210,7 @@ class Text_Parser_Test extends Testcase {
 		$tokens[9]  = $tokens[9]->with_value( $tokens[9]->value . '!' );
 		$parser->update( $tokens );
 
-		$this->assertSame( 'Quoth the raven, "nevermore"!!', $parser->unload() );
+		$this->assertSame( 'Quoth the raven, "nevermore"!!', $parser->get_text() );
 
 		return $parser;
 	}
@@ -329,16 +220,15 @@ class Text_Parser_Test extends Testcase {
 	 *
 	 * @covers ::get_all
 	 *
-	 * @uses ::load
-	 * @uses ::is_not_preceeded_by
-	 * @uses ::is_preceeded_by
+	 * @uses ::__construct
+	 * @uses ::is_not_preceded_by
+	 * @uses ::is_preceded_by
 	 * @uses ::parse_ambiguous_token
 	 * @uses ::tokenize
 	 */
 	public function test_get_all() {
 		$interesting = 'Quoth the raven, "nevermore"!';
-		$parser      = $this->parser;
-		$this->assertTrue( $parser->load( $interesting ) );
+		$parser      = new Text_Parser( $interesting );
 
 		$tokens = $parser->get_all();
 		$this->assertCount( 10, $tokens );
@@ -391,8 +281,7 @@ class Text_Parser_Test extends Testcase {
 	 * @uses ::conforms_to_letters_policy
 	 * @uses ::check_policy
 	 * @uses ::get_type
-	 * @uses ::is_preceeded_by
-	 * @uses ::load
+	 * @uses ::is_preceded_by
 	 * @uses ::parse_ambiguous_token
 	 * @uses ::tokenize
 	 *
@@ -402,7 +291,7 @@ class Text_Parser_Test extends Testcase {
 		$tokens = $parser->get_words();
 		$this->assertCount( 4, $tokens );
 
-		$parser->load( 'A few m1xed W0RDS.' );
+		$parser = new Text_Parser( 'A few m1xed W0RDS.' );
 		$tokens = $parser->get_words( Text_Parser::REQUIRE_ALL_LETTERS, Text_Parser::NO_ALL_CAPS );
 		$this->assertCount( 1, $tokens );
 		$this->assert_contains_equals( new Token( 'few', Token::WORD ), $tokens, '' );
@@ -477,8 +366,8 @@ class Text_Parser_Test extends Testcase {
 	 * @covers ::check_policy
 	 * @dataProvider provide_conforms_to_letters_policy_data
 	 *
-	 * @uses ::load
-	 * @uses ::is_preceeded_by
+	 * @uses ::__construct
+	 * @uses ::is_preceded_by
 	 * @uses ::parse_ambiguous_token
 	 * @uses ::tokenize
 	 *
@@ -488,7 +377,8 @@ class Text_Parser_Test extends Testcase {
 	 * @param bool   $result Expected result.
 	 */
 	public function test_conforms_to_letters_policy( $value, $type, $policy, $result ) {
-		$parser = $this->parser;
+		// Ensure that encoding can be determined.
+		$parser = new Text_Parser( $value );
 		$token  = new Token( $value, $type );
 
 		$this->assertSame( $result, $this->invoke_method( $parser, 'conforms_to_letters_policy', [ $token, $policy ] ) );
@@ -524,8 +414,8 @@ class Text_Parser_Test extends Testcase {
 	 * @covers ::check_policy
 	 * @dataProvider provide_conforms_to_caps_policy_data
 	 *
-	 * @uses ::load
-	 * @uses ::is_preceeded_by
+	 * @uses ::__construct
+	 * @uses ::is_preceded_by
 	 * @uses ::parse_ambiguous_token
 	 * @uses ::tokenize
 	 *
@@ -535,10 +425,9 @@ class Text_Parser_Test extends Testcase {
 	 * @param bool   $result Expected result.
 	 */
 	public function test_conforms_to_caps_policy( $value, $type, $policy, $result ) {
-		$parser = $this->parser;
-		$parser->load( $value ); // Ensure that encoding can be determined.
-
-		$token = new Token( $value, $type );
+		// Ensure that encoding can be determined.
+		$parser = new Text_Parser( $value );
+		$token  = new Token( $value, $type );
 
 		$this->assertSame( $result, $this->invoke_method( $parser, 'conforms_to_caps_policy', [ $token, $policy ] ) );
 	}
@@ -573,8 +462,8 @@ class Text_Parser_Test extends Testcase {
 	 * @covers ::check_policy
 	 * @dataProvider provide_conforms_to_compounds_policy
 	 *
-	 * @uses ::load
-	 * @uses ::is_preceeded_by
+	 * @uses ::__construct
+	 * @uses ::is_preceded_by
 	 * @uses ::parse_ambiguous_token
 	 * @uses ::tokenize
 	 *
@@ -584,38 +473,11 @@ class Text_Parser_Test extends Testcase {
 	 * @param bool   $result Expected result.
 	 */
 	public function test_conforms_to_compounds_policy( $value, $type, $policy, $result ) {
-		$parser = $this->parser;
-		$parser->load( $value ); // Ensure that encoding can be determined.
-
-		$token = new Token( $value, $type );
+		// Ensure that encoding can be determined.
+		$parser = new Text_Parser( $value );
+		$token  = new Token( $value, $type );
 
 		$this->assertSame( $result, $this->invoke_method( $parser, 'conforms_to_compounds_policy', [ $token, $policy ] ) );
-	}
-
-	/**
-	 * Test get_words.
-	 *
-	 * @covers ::get_words
-	 * @depends test_get_all
-	 *
-	 * @uses ::clear
-	 * @uses ::is_preceeded_by
-	 * @uses ::load
-	 * @uses ::parse_ambiguous_token
-	 * @uses ::tokenize
-	 * @uses ::unload
-	 *
-	 * @param \PHP_Typography\Text_Parser $parser The parser to use.
-	 */
-	public function test_get_words_unloaded( Text_Parser $parser ) {
-		$parser->load( 'A few m1xed W0RDS.' );
-		$parser->unload();
-
-		$tokens = $parser->get_words( Text_Parser::REQUIRE_ALL_LETTERS, Text_Parser::NO_ALL_CAPS );
-		$this->assertCount( 0, $tokens );
-		$this->assertSame( [], $tokens );
-
-		return $parser;
 	}
 
 	/**
@@ -639,18 +501,15 @@ class Text_Parser_Test extends Testcase {
 	 * Test get_type.
 	 *
 	 * @covers ::get_type
-	 * @depends test_get_all
 	 *
 	 * @uses ::get_all
-	 * @uses ::is_preceeded_by
-	 * @uses ::load
+	 * @uses ::is_preceded_by
+	 * @uses ::__construct
 	 * @uses ::parse_ambiguous_token
 	 * @uses ::tokenize
-	 *
-	 * @param \PHP_Typography\Text_Parser $parser The parser to use.
 	 */
-	public function test_get_type( Text_Parser $parser ) {
-		$parser->load( 'A few m1xed W0RDS.' );
+	public function test_get_type() {
+		$parser = new Text_Parser( 'A few m1xed W0RDS.' );
 
 		$words  = [];
 		$tokens = $parser->get_all();

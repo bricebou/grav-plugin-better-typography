@@ -1,0 +1,9 @@
+# Local dev tooling caches
+/.phpunit.cache/
+/.ecs_cache/
+/var/
+
+# OS / IDE
+.DS_Store
+/.idea/
+/.vscode/

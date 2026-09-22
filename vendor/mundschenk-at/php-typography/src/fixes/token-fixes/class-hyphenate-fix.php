@@ -2,7 +2,7 @@
 /**
  *  This file is part of PHP-Typography.
  *
- *  Copyright 2017 Peter Putzer.
+ *  Copyright 2017-2024 Peter Putzer.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ class Hyphenate_Fix extends Abstract_Token_Fix {
 	/**
 	 * An array of ( $tag => true ) for quick checking with `isset`.
 	 *
-	 * @var array
+	 * @var array<string,bool>
 	 */
 	private $heading_tags = [
 		'h1' => true,
@@ -70,7 +70,7 @@ class Hyphenate_Fix extends Abstract_Token_Fix {
 	 * @param int        $target          Optional. Default Token_Fix::WORDS.
 	 * @param bool       $feed_compatible Optional. Default false.
 	 */
-	public function __construct( Cache $cache = null, $target = Token_Fix::WORDS, $feed_compatible = false ) {
+	public function __construct( ?Cache $cache = null, $target = Token_Fix::WORDS, $feed_compatible = false ) {
 		parent::__construct( $target, $feed_compatible );
 
 		if ( null === $cache ) {
@@ -81,34 +81,36 @@ class Hyphenate_Fix extends Abstract_Token_Fix {
 	}
 
 	/**
-	 * Apply the tweak to a given textnode.
+	 * Apply the fix to a given set of tokens
 	 *
-	 * @param Token[]       $tokens   Required.
-	 * @param Settings      $settings Required.
-	 * @param bool          $is_title Optional. Default false.
-	 * @param \DOMText|null $textnode Optional. Default null.
+	 * @since 7.0.0 The parameter order has been re-arranged to mirror Node_Fix.
 	 *
-	 * @return Token[] An array of tokens.
+	 * @param Token[]  $tokens   The set of tokens.
+	 * @param \DOMText $textnode The context DOM node.
+	 * @param Settings $settings The settings to apply.
+	 * @param bool     $is_title Indicates if the processed tokens occur in a title/heading context.
+	 *
+	 * @return Token[]           The fixed set of tokens.
 	 */
-	public function apply( array $tokens, Settings $settings, $is_title = false, \DOMText $textnode = null ) {
-		if ( empty( $settings[ Settings::HYPHENATION ] ) ) {
+	public function apply( array $tokens, \DOMText $textnode, Settings $settings, $is_title ) {
+		if ( empty( $settings->hyphenation ) ) {
 			return $tokens; // abort.
 		}
 
 		$is_heading = false;
-		if ( null !== $textnode && ! empty( $textnode->parentNode ) ) {
-			$block_level_parent = DOM::get_block_parent_name( $textnode );
+		if ( ! empty( $textnode->parentNode ) ) {
+			$block_level_parent = DOM::get_block_parent( $textnode )->tagName ?? '';
 
 			if ( ! empty( $block_level_parent ) && isset( $this->heading_tags[ $block_level_parent ] ) ) {
 				$is_heading = true;
 			}
 		}
 
-		if ( empty( $settings[ Settings::HYPHENATE_HEADINGS ] ) && ( $is_title || $is_heading ) ) {
+		if ( empty( $settings->hyphenate_headings ) && ( $is_title || $is_heading ) ) {
 			return $tokens; // abort.
 		}
 
-		// Call functionality as seperate function so it can be run without test for setting[ Settings::HYPHENATION ] - such as with url wrapping.
+		// Call functionality as separate function so it can be run without test for $settings->hyphentation - such as with url wrapping.
 		return $this->do_hyphenate( $tokens, $settings );
 	}
 
@@ -122,11 +124,11 @@ class Hyphenate_Fix extends Abstract_Token_Fix {
 	 * @return Token[] The hyphenated text tokens.
 	 */
 	protected function do_hyphenate( array $tokens, Settings $settings, $hyphen = U::SOFT_HYPHEN ) {
-		if ( empty( $settings[ Settings::HYPHENATION_MIN_LENGTH ] ) || empty( $settings[ Settings::HYPHENATION_MIN_BEFORE ] ) ) {
+		if ( empty( $settings->min_length_hyphenation ) || empty( $settings->min_before_hyphenation ) ) {
 			return $tokens;
 		}
 
-		return $this->get_hyphenator( $settings )->hyphenate( $tokens, $hyphen, ! empty( $settings[ Settings::HYPHENATE_TITLE_CASE ] ), $settings[ Settings::HYPHENATION_MIN_LENGTH ], $settings[ Settings::HYPHENATION_MIN_BEFORE ], $settings[ Settings::HYPHENATION_MIN_AFTER ] );
+		return $this->get_hyphenator( $settings )->hyphenate( $tokens, $hyphen, ! empty( $settings->hyphenate_title_case ), $settings->min_length_hyphenation, $settings->min_before_hyphenation, $settings->min_after_hyphenation );
 	}
 
 	/**
@@ -137,8 +139,8 @@ class Hyphenate_Fix extends Abstract_Token_Fix {
 	 * @return Hyphenator
 	 */
 	public function get_hyphenator( Settings $settings ) {
-		$lang       = $settings[ Settings::HYPHENATION_LANGUAGE ];
-		$exceptions = (array) $settings[ Settings::HYPHENATION_CUSTOM_EXCEPTIONS ];
+		$lang       = $settings->hyphenation_language;
+		$exceptions = (array) $settings->hyphenation_exceptions;
 		$hyphenator = $this->cache->get_hyphenator( $lang );
 
 		if ( null === $hyphenator ) {
@@ -157,7 +159,7 @@ class Hyphenate_Fix extends Abstract_Token_Fix {
 	 *
 	 * @param Hyphenator\Cache $cache Required.
 	 */
-	public function set_hyphenator_cache( Hyphenator\Cache $cache ) {
+	public function set_hyphenator_cache( Hyphenator\Cache $cache ): void {
 		$this->cache = $cache;
 	}
 }

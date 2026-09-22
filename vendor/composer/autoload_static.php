@@ -7,22 +7,22 @@ namespace Composer\Autoload;
 class ComposerStaticInit95581568563c28d09df0730ac2db8bc9
 {
     public static $prefixLengthsPsr4 = array (
-        'M' => 
+        'M' =>
         array (
             'Masterminds\\' => 12,
         ),
-        'G' => 
+        'G' =>
         array (
             'Grav\\Plugin\\BetterTypography\\' => 29,
         ),
     );
 
     public static $prefixDirsPsr4 = array (
-        'Masterminds\\' => 
+        'Masterminds\\' =>
         array (
             0 => __DIR__ . '/..' . '/masterminds/html5/src',
         ),
-        'Grav\\Plugin\\BetterTypography\\' => 
+        'Grav\\Plugin\\BetterTypography\\' =>
         array (
             0 => __DIR__ . '/../..' . '/classes',
         ),
@@ -31,9 +31,34 @@ class ComposerStaticInit95581568563c28d09df0730ac2db8bc9
     public static $classMap = array (
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
         'Grav\\Plugin\\BetterTypographyPlugin' => __DIR__ . '/../..' . '/better-typography.php',
+        'Masterminds\\HTML5' => __DIR__ . '/..' . '/masterminds/html5/src/HTML5.php',
+        'Masterminds\\HTML5\\Elements' => __DIR__ . '/..' . '/masterminds/html5/src/HTML5/Elements.php',
+        'Masterminds\\HTML5\\Entities' => __DIR__ . '/..' . '/masterminds/html5/src/HTML5/Entities.php',
+        'Masterminds\\HTML5\\Exception' => __DIR__ . '/..' . '/masterminds/html5/src/HTML5/Exception.php',
+        'Masterminds\\HTML5\\InstructionProcessor' => __DIR__ . '/..' . '/masterminds/html5/src/HTML5/InstructionProcessor.php',
+        'Masterminds\\HTML5\\Parser\\CharacterReference' => __DIR__ . '/..' . '/masterminds/html5/src/HTML5/Parser/CharacterReference.php',
+        'Masterminds\\HTML5\\Parser\\DOMTreeBuilder' => __DIR__ . '/..' . '/masterminds/html5/src/HTML5/Parser/DOMTreeBuilder.php',
+        'Masterminds\\HTML5\\Parser\\EventHandler' => __DIR__ . '/..' . '/masterminds/html5/src/HTML5/Parser/EventHandler.php',
+        'Masterminds\\HTML5\\Parser\\FileInputStream' => __DIR__ . '/..' . '/masterminds/html5/src/HTML5/Parser/FileInputStream.php',
+        'Masterminds\\HTML5\\Parser\\InputStream' => __DIR__ . '/..' . '/masterminds/html5/src/HTML5/Parser/InputStream.php',
+        'Masterminds\\HTML5\\Parser\\ParseError' => __DIR__ . '/..' . '/masterminds/html5/src/HTML5/Parser/ParseError.php',
+        'Masterminds\\HTML5\\Parser\\Scanner' => __DIR__ . '/..' . '/masterminds/html5/src/HTML5/Parser/Scanner.php',
+        'Masterminds\\HTML5\\Parser\\StringInputStream' => __DIR__ . '/..' . '/masterminds/html5/src/HTML5/Parser/StringInputStream.php',
+        'Masterminds\\HTML5\\Parser\\Tokenizer' => __DIR__ . '/..' . '/masterminds/html5/src/HTML5/Parser/Tokenizer.php',
+        'Masterminds\\HTML5\\Parser\\TreeBuildingRules' => __DIR__ . '/..' . '/masterminds/html5/src/HTML5/Parser/TreeBuildingRules.php',
+        'Masterminds\\HTML5\\Parser\\UTF8Utils' => __DIR__ . '/..' . '/masterminds/html5/src/HTML5/Parser/UTF8Utils.php',
+        'Masterminds\\HTML5\\Serializer\\OutputRules' => __DIR__ . '/..' . '/masterminds/html5/src/HTML5/Serializer/OutputRules.php',
+        'Masterminds\\HTML5\\Serializer\\RulesInterface' => __DIR__ . '/..' . '/masterminds/html5/src/HTML5/Serializer/RulesInterface.php',
+        'Masterminds\\HTML5\\Serializer\\Traverser' => __DIR__ . '/..' . '/masterminds/html5/src/HTML5/Serializer/Traverser.php',
         'PHP_Typography\\Bin\\File_Operations' => __DIR__ . '/..' . '/mundschenk-at/php-typography/src/bin/class-file-operations.php',
         'PHP_Typography\\Bin\\Pattern_Converter' => __DIR__ . '/..' . '/mundschenk-at/php-typography/src/bin/class-pattern-converter.php',
         'PHP_Typography\\DOM' => __DIR__ . '/..' . '/mundschenk-at/php-typography/src/class-dom.php',
+        'PHP_Typography\\Exceptions\\Invalid_Encoding_Exception' => __DIR__ . '/..' . '/mundschenk-at/php-typography/src/exceptions/class-invalid-encoding-exception.php',
+        'PHP_Typography\\Exceptions\\Invalid_File_Exception' => __DIR__ . '/..' . '/mundschenk-at/php-typography/src/exceptions/class-invalid-file-exception.php',
+        'PHP_Typography\\Exceptions\\Invalid_Hyphenation_Pattern_File_Exception' => __DIR__ . '/..' . '/mundschenk-at/php-typography/src/exceptions/class-invalid-hyphenation-pattern-file-exception.php',
+        'PHP_Typography\\Exceptions\\Invalid_JSON_Exception' => __DIR__ . '/..' . '/mundschenk-at/php-typography/src/exceptions/class-invalid-json-exception.php',
+        'PHP_Typography\\Exceptions\\Invalid_Path_Exception' => __DIR__ . '/..' . '/mundschenk-at/php-typography/src/exceptions/class-invalid-path-exception.php',
+        'PHP_Typography\\Exceptions\\Invalid_Style_Exception' => __DIR__ . '/..' . '/mundschenk-at/php-typography/src/exceptions/class-invalid-style-exception.php',
         'PHP_Typography\\Fixes\\Default_Registry' => __DIR__ . '/..' . '/mundschenk-at/php-typography/src/fixes/class-default-registry.php',
         'PHP_Typography\\Fixes\\Node_Fix' => __DIR__ . '/..' . '/mundschenk-at/php-typography/src/fixes/class-node-fix.php',
         'PHP_Typography\\Fixes\\Node_Fixes\\Abstract_Node_Fix' => __DIR__ . '/..' . '/mundschenk-at/php-typography/src/fixes/node-fixes/class-abstract-node-fix.php',
@@ -62,6 +87,7 @@ class ComposerStaticInit95581568563c28d09df0730ac2db8bc9
         'PHP_Typography\\Fixes\\Node_Fixes\\Style_Hanging_Punctuation_Fix' => __DIR__ . '/..' . '/mundschenk-at/php-typography/src/fixes/node-fixes/class-style-hanging-punctuation-fix.php',
         'PHP_Typography\\Fixes\\Node_Fixes\\Style_Initial_Quotes_Fix' => __DIR__ . '/..' . '/mundschenk-at/php-typography/src/fixes/node-fixes/class-style-initial-quotes-fix.php',
         'PHP_Typography\\Fixes\\Node_Fixes\\Style_Numbers_Fix' => __DIR__ . '/..' . '/mundschenk-at/php-typography/src/fixes/node-fixes/class-style-numbers-fix.php',
+        'PHP_Typography\\Fixes\\Node_Fixes\\Unicode_Remapping_Fix' => __DIR__ . '/..' . '/mundschenk-at/php-typography/src/fixes/node-fixes/class-unicode-remapping-fix.php',
         'PHP_Typography\\Fixes\\Node_Fixes\\Unit_Spacing_Fix' => __DIR__ . '/..' . '/mundschenk-at/php-typography/src/fixes/node-fixes/class-unit-spacing-fix.php',
         'PHP_Typography\\Fixes\\Registry' => __DIR__ . '/..' . '/mundschenk-at/php-typography/src/fixes/class-registry.php',
         'PHP_Typography\\Fixes\\Token_Fix' => __DIR__ . '/..' . '/mundschenk-at/php-typography/src/fixes/class-token-fix.php',

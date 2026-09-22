@@ -10,45 +10,42 @@ use PHP_Typography\Settings;
 use Twig_SimpleFilter;
 
 /**
-* Class BetterTypographyPlugin
-* @package Grav\Plugin
-*/
+ * Class BetterTypographyPlugin
+ */
 class BetterTypographyPlugin extends Plugin
 {
     /**
-    * @return array
-    *
-    * The getSubscribedEvents() gives the core a list of events
-    *     that the plugin wants to listen to. The key of each
-    *     array section is the event that the plugin listens to
-    *     and the value (in the form of an array) contains the
-    *     callable (or function) as well as the priority. The
-    *     higher the number the higher the priority.
-    */
+     * @return array
+     *
+     * The getSubscribedEvents() gives the core a list of events
+     *     that the plugin wants to listen to. The key of each
+     *     array section is the event that the plugin listens to
+     *     and the value (in the form of an array) contains the
+     *     callable (or function) as well as the priority. The
+     *     higher the number the higher the priority.
+     */
     public static function getSubscribedEvents(): array
     {
         return [
             'onPluginsInitialized' => [
                 // Uncomment following line when plugin requires Grav < 1.7
                 // ['autoload', 100000],
-                ['onPluginsInitialized', 0]
-                ]
+                ['onPluginsInitialized', 0],
+            ],
         ];
     }
 
     /**
-    * Composer autoload
-    *
-    * @return ClassLoader
-    */
+     * Composer autoload
+     */
     public function autoload(): ClassLoader
     {
         return require __DIR__ . '/vendor/autoload.php';
     }
 
     /**
-    * Initialize the plugin
-    */
+     * Initialize the plugin
+     */
     public function onPluginsInitialized(): void
     {
         // Don't proceed if we are in the admin plugin
@@ -59,14 +56,14 @@ class BetterTypographyPlugin extends Plugin
         $this->enable([
             // Put your main events here
             'onPageContentProcessed' => ['onPageContentProcessed', -20],
-            'onTwigInitialized' => ['onTwigInitialized', 0]
+            'onTwigInitialized' => ['onTwigInitialized', 0],
         ]);
     }
 
     public function onTwigInitialized(): void
     {
         $this->grav['twig']->twig()->addFilter(
-            new Twig_SimpleFilter('bettertypo', [$this, 'betterTypo'])
+            new Twig_SimpleFilter('bettertypo', $this->betterTypo(...))
         );
     }
 
@@ -78,21 +75,17 @@ class BetterTypographyPlugin extends Plugin
     }
 
     /**
-     * languageList
-     *
      * get all supported languages set in System / Languages
-     *
-     * @return array
      */
     public static function languageList(): array
     {
-        /** @var Grav */
+        /** @var Grav $grav */
         $grav = Grav::instance();
-        /** @var Data */
+        /** @var Data $config */
         $config = $grav['config'];
 
         $languages = [
-            'default' => 'Default'
+            'default' => 'Default',
         ];
 
         foreach ($config->get('system.languages.supported', []) as $language) {
@@ -104,28 +97,21 @@ class BetterTypographyPlugin extends Plugin
 
     /**
      * maxLanguages
-     *
-     * @return int
      */
     public static function maxLanguages(): int
     {
-        /** @var Grav */
+        /** @var Grav $grav */
         $grav = Grav::instance();
-        /** @var Data */
+        /** @var Data $config */
         $config = $grav['config'];
 
         return count($config->get('system.languages.supported', [])) + 1;
     }
 
-
     /**
-    * betterTypo
-    *
-    * @param  string $string
-    * @param  string (optional) $language
-    * @return string
-    */
-    public function betterTypo(string $string, string $language = null): string
+     * @param  string (optional) $language
+     */
+    public function betterTypo(string $string, ?string $language = null): string
     {
         $PHPTypoSettings = new Settings(false);
         $PHPTypoSettings->set_smart_ordinal_suffix(true);
@@ -140,9 +126,9 @@ class BetterTypographyPlugin extends Plugin
         $PHPTypoSettings->set_numbered_abbreviation_spacing(true);
         $PHPTypoSettings->set_dewidow(true);
 
-        if (!$language) {
+        if (! $language) {
             $language = $this->grav['page']->language() ?? $this->grav['language']->getLanguage();
-            if (!$language) {
+            if (! $language) {
                 $language = $this->grav['config']->get('site.default_lang');
             }
         }
@@ -188,7 +174,6 @@ class BetterTypographyPlugin extends Plugin
             $PHPTypoSettings->set_smart_diacritics(true);
             $PHPTypoSettings->set_diacritic_language($language);
         }
-
 
         $PHPTypo = new PHP_Typography();
 

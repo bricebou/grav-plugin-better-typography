@@ -1,0 +1,34 @@
+<?php
+
+namespace Grav\Common;
+
+use Grav\Common\Config\Config;
+
+/**
+ * PHPStan stub: Grav core is not a dependency of the plugin, and PHPStan refuses to analyse a class whose parent is
+ * unknown (an error no baseline can hold). Only the members the plugin uses are declared; the other Grav classes
+ * stay unknown and their errors are listed in phpstan-baseline.neon.
+ */
+class Plugin
+{
+    /** @var Grav */
+    protected $grav;
+
+    /** @var Config|null */
+    protected $config;
+
+    /**
+     * @return bool
+     */
+    public function isAdmin()
+    {
+    }
+
+    /**
+     * @param array<string, mixed> $events
+     * @return void
+     */
+    protected function enable(array $events)
+    {
+    }
+}

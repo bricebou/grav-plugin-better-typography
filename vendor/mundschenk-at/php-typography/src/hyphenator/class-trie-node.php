@@ -2,7 +2,7 @@
 /**
  *  This file is part of PHP-Typography.
  *
- *  Copyright 2017 Peter Putzer.
+ *  Copyright 2017-2024 Peter Putzer.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,8 +26,6 @@
 
 namespace PHP_Typography\Hyphenator;
 
-use PHP_Typography\Strings;
-
 /**
  * A hyphenation pattern trie node.
  *
@@ -43,18 +41,18 @@ final class Trie_Node {
 	/**
 	 * The offsets array.
 	 *
-	 * @var array
+	 * @var array<int,int[]>
 	 */
-	private $offsets = [];
+	private array $offsets = [];
 
 	/**
 	 * Linked trie nodes.
 	 *
-	 * @var array {
+	 * @var array<string,Trie_Node> {
 	 *      @type Trie_Node $char The next node in the given character path.
 	 * }
 	 */
-	private $links = [];
+	private array $links = [];
 
 	/**
 	 * Create new Trie_Node.
@@ -69,7 +67,7 @@ final class Trie_Node {
 	 *
 	 * @return Trie_Node
 	 */
-	public function get_node( $char ) {
+	public function get_node( string $char ): Trie_Node {
 		if ( ! isset( $this->links[ $char ] ) ) {
 			$this->links[ $char ] = new Trie_Node();
 		}
@@ -84,38 +82,38 @@ final class Trie_Node {
 	 *
 	 * @return bool
 	 */
-	public function exists( $char ) {
+	public function exists( string $char ): bool {
 		return ! empty( $this->links[ $char ] );
 	}
 
 	/**
 	 * Retrieves the offsets array.
 	 *
-	 * @return array
+	 * @return array<int,int[]>
 	 */
-	public function offsets() {
+	public function offsets(): array {
 		return $this->offsets;
 	}
 
 	/**
 	 * Builds pattern search trie from pattern list(s).
 	 *
-	 * @param array $patterns An array of hyphenation patterns.
+	 * @param array<string,string> $patterns An array of hyphenation patterns.
 	 *
 	 * @return Trie_Node The starting node of the trie.
 	 */
-	public static function build_trie( array $patterns ) {
+	public static function build_trie( array $patterns ): Trie_Node {
 		$trie = new Trie_Node();
 
 		foreach ( $patterns as $key => $pattern ) {
 			$node = $trie;
 
-			foreach ( Strings::mb_str_split( $key ) as $char ) {
+			foreach ( \mb_str_split( $key ) as $char ) {
 				$node = $node->get_node( $char );
 			}
 
-			\preg_match_all( '/([1-9])/S', $pattern, $offsets, PREG_OFFSET_CAPTURE );
-			$node->offsets = $offsets[1];
+			\preg_match_all( '/([1-9])/S', $pattern, $offsets, \PREG_OFFSET_CAPTURE );
+			$node->offsets = $offsets[1]; // @phpstan-ignore-line -- The array contains only ints because of the regex.
 		}
 
 		return $trie;

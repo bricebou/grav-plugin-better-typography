@@ -1,0 +1,15 @@
+includes:
+    - phpstan-baseline.neon
+
+parameters:
+    level: 8
+    scanFiles:
+        - stubs/Plugin.stub
+    phpVersion: 80200
+    paths:
+        - better-typography.php
+        - classes
+    excludePaths:
+        - vendor
+    treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: true

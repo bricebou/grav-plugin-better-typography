@@ -131,13 +131,16 @@ class Tokenizer
 
             $tok = $this->scanner->next();
 
-            if ('!' === $tok) {
+            if (false === $tok) {
+                // end of string
+                $this->parseError('Illegal tag opening');
+            } elseif ('!' === $tok) {
                 $this->markupDeclaration();
             } elseif ('/' === $tok) {
                 $this->endTag();
             } elseif ('?' === $tok) {
                 $this->processingInstruction();
-            } elseif (ctype_alpha($tok)) {
+            } elseif ($this->is_alpha($tok)) {
                 $this->tagName();
             } else {
                 $this->parseError('Illegal tag opening');
@@ -347,7 +350,7 @@ class Tokenizer
         // > -> parse error
         // EOF -> parse error
         // -> parse error
-        if (!ctype_alpha($tok)) {
+        if (!$this->is_alpha($tok)) {
             $this->parseError("Expected tag name, got '%s'", $tok);
             if ("\0" == $tok || false === $tok) {
                 return false;
@@ -504,7 +507,7 @@ class Tokenizer
         $this->scanner->whitespace();
 
         $val = $this->attributeValue();
-        if ($isValidAttribute) {
+        if ($isValidAttribute && !array_key_exists($name, $attributes)) {
             $attributes[$name] = $val;
         }
 
@@ -712,18 +715,25 @@ class Tokenizer
             return true;
         }
 
-        // If it doesn't start with -, not the end.
-        if ('-' != $tok) {
+        // If next two tokens are not '--', not the end.
+        if ('-' != $tok || '-' != $this->scanner->peek()) {
             return false;
         }
 
-        // Advance one, and test for '->'
-        if ('-' == $this->scanner->next() && '>' == $this->scanner->peek()) {
-            $this->scanner->consume(); // Consume the last '>'
+        $this->scanner->consume(2); // Consume '-' and one of '!' or '>'
+
+        // Test for '>'
+        if ('>' == $this->scanner->current()) {
             return true;
         }
-        // Unread '-';
-        $this->scanner->unconsume(1);
+        // Test for '!>'
+        if ('!' == $this->scanner->current() && '>' == $this->scanner->peek()) {
+            $this->scanner->consume(); // Consume the last '>'
+
+            return true;
+        }
+        // Unread '-' and one of '!' or '>';
+        $this->scanner->unconsume(2);
 
         return false;
     }
@@ -1118,7 +1128,7 @@ class Tokenizer
                 return '&';
             }
 
-            // Hexidecimal encoding.
+            // Hexadecimal encoding.
             // X[0-9a-fA-F]+;
             // x[0-9a-fA-F]+;
             if ('x' === $tok || 'X' === $tok) {
@@ -1187,5 +1197,23 @@ class Tokenizer
         $this->parseError('Expected &ENTITY;, got &ENTITY%s (no trailing ;) ', $tok);
 
         return '&';
+    }
+
+    /**
+     * Checks whether a (single-byte) character is an ASCII letter or not.
+     *
+     * @param string $input A single-byte string
+     *
+     * @return bool True if it is a letter, False otherwise
+     */
+    protected function is_alpha($input)
+    {
+        if (!is_string($input) || 1 !== strlen($input)) {
+            return false;
+        }
+
+        $code = ord($input);
+
+        return ($code >= 97 && $code <= 122) || ($code >= 65 && $code <= 90);
     }
 }

@@ -2,7 +2,7 @@
 /**
  *  This file is part of PHP-Typography.
  *
- *  Copyright 2015-2020 Peter Putzer.
+ *  Copyright 2015-2024 Peter Putzer.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@ namespace PHP_Typography\Tests\Fixes\Token_Fixes;
 
 use PHP_Typography\Fixes\Token_Fix;
 use PHP_Typography\Fixes\Token_Fixes;
-use PHP_Typography\Settings;
 
 /**
  * Wrap_Emails_Fix unit test.
@@ -97,9 +96,9 @@ class Wrap_Emails_Fix_Test extends Token_Fix_Testcase {
 	 * @param string $result Expected result.
 	 */
 	public function test_apply( $input, $result ) {
-		$this->s->set_email_wrap( true );
+		$this->s->set_wrap_emails( true );
 
-		$this->assertFixResultSame( $input, $result );
+		$this->assertFixResultSame( $input, $result, false, $this->getTextnode( 'foo', $input ) );
 	}
 
 	/**
@@ -116,8 +115,8 @@ class Wrap_Emails_Fix_Test extends Token_Fix_Testcase {
 	 * @param string $result Expected result.
 	 */
 	public function test_apply_off( $input, $result ) {
-		$this->s->set_email_wrap( false );
+		$this->s->set_wrap_emails( false );
 
-		$this->assertFixResultSame( $input, $input );
+		$this->assertFixResultSame( $input, $input, false, $this->getTextnode( 'foo', $input ) );
 	}
 }

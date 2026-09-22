@@ -2,7 +2,7 @@
 /**
  *  This file is part of PHP-Typography.
  *
- *  Copyright 2015-2020 Peter Putzer.
+ *  Copyright 2015-2024 Peter Putzer.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 
 namespace PHP_Typography\Tests\Fixes\Token_Fixes;
 
+use PHP_Typography\Exceptions\Invalid_Encoding_Exception;
 use PHP_Typography\Fixes\Token_Fix;
 use PHP_Typography\Fixes\Token_Fixes;
 use PHP_Typography\Settings;
@@ -88,21 +89,24 @@ class Hyphenate_Fix_Test extends Token_Fix_Testcase {
 	 * @uses PHP_Typography\Text_Parser\Token
 	 */
 	public function test_do_hyphenate() {
-		$this->s->set_hyphenation( true );
-		$this->s->set_hyphenation_language( 'de' );
-		$this->s->set_min_length_hyphenation( 2 );
-		$this->s->set_min_before_hyphenation( 2 );
-		$this->s->set_min_after_hyphenation( 2 );
-		$this->s->set_hyphenate_headings( false );
-		$this->s->set_hyphenate_all_caps( true );
-		$this->s->set_hyphenate_title_case( true );
+		$s = $this->s;
 
+		$s->set_hyphenation( true );
+		$s->set_hyphenation_language( 'de' );
+		$s->set_min_length_hyphenation( 2 );
+		$s->set_min_before_hyphenation( 2 );
+		$s->set_min_after_hyphenation( 2 );
+		$s->set_hyphenate_headings( false );
+		$s->set_hyphenate_all_caps( true );
+		$s->set_hyphenate_title_case( true );
+
+		$this->expect_exception( Invalid_Encoding_Exception::class );
 		$tokens     = $this->tokenize( mb_convert_encoding( 'Änderungsmeldung', 'ISO-8859-2' ) );
-		$hyphenated = $this->invoke_method( $this->fix, 'do_hyphenate', [ $tokens, $this->s ] );
+		$hyphenated = $this->invoke_method( $this->fix, 'do_hyphenate', [ $tokens, $s ] );
 		$this->assert_tokens_same( $hyphenated, $tokens );
 
 		$tokens     = $this->tokenize( 'Änderungsmeldung' );
-		$hyphenated = $this->invoke_method( $this->fix, 'do_hyphenate', [ $tokens, $this->s ] );
+		$hyphenated = $this->invoke_method( $this->fix, 'do_hyphenate', [ $tokens, $s ] );
 		$this->assert_tokens_not_same( $hyphenated, $tokens, 'Different encodings should not be equal.' );
 	}
 
@@ -119,17 +123,19 @@ class Hyphenate_Fix_Test extends Token_Fix_Testcase {
 	 * @uses PHP_Typography\Text_Parser\Token
 	 */
 	public function test_do_hyphenate_no_title_case() {
-		$this->s->set_hyphenation( true );
-		$this->s->set_hyphenation_language( 'de' );
-		$this->s->set_min_length_hyphenation( 2 );
-		$this->s->set_min_before_hyphenation( 2 );
-		$this->s->set_min_after_hyphenation( 2 );
-		$this->s->set_hyphenate_headings( false );
-		$this->s->set_hyphenate_all_caps( true );
-		$this->s->set_hyphenate_title_case( false );
+		$s = $this->s;
+
+		$s->set_hyphenation( true );
+		$s->set_hyphenation_language( 'de' );
+		$s->set_min_length_hyphenation( 2 );
+		$s->set_min_before_hyphenation( 2 );
+		$s->set_min_after_hyphenation( 2 );
+		$s->set_hyphenate_headings( false );
+		$s->set_hyphenate_all_caps( true );
+		$s->set_hyphenate_title_case( false );
 
 		$tokens     = $this->tokenize( 'Änderungsmeldung' );
-		$hyphenated = $this->invoke_method( $this->fix, 'do_hyphenate', [ $tokens, $this->s ] );
+		$hyphenated = $this->invoke_method( $this->fix, 'do_hyphenate', [ $tokens, $s ] );
 		$this->assertEquals( $tokens, $hyphenated );
 	}
 
@@ -145,19 +151,23 @@ class Hyphenate_Fix_Test extends Token_Fix_Testcase {
 	 * @uses PHP_Typography\Text_Parser\Token
 	 */
 	public function test_do_hyphenate_invalid() {
-		$this->s->set_hyphenation( true );
-		$this->s->set_hyphenation_language( 'de' );
-		$this->s->set_min_length_hyphenation( 2 );
-		$this->s->set_min_before_hyphenation( 2 );
-		$this->s->set_min_after_hyphenation( 2 );
-		$this->s->set_hyphenate_headings( false );
-		$this->s->set_hyphenate_all_caps( true );
-		$this->s->set_hyphenate_title_case( false );
+		$s = $this->s;
 
-		$this->s[ Settings::HYPHENATION_MIN_BEFORE ] = 0; // invalid value.
+		$s->set_hyphenation( true );
+		$s->set_hyphenation_language( 'de' );
+		$s->set_min_length_hyphenation( 2 );
+		$s->set_min_before_hyphenation( 2 );
+		$s->set_min_after_hyphenation( 2 );
+		$s->set_hyphenate_headings( false );
+		$s->set_hyphenate_all_caps( true );
+		$s->set_hyphenate_title_case( false );
+
+		$settings_data                                     = $this->get_value( $s, 'data' );
+		$settings_data[ Settings::HYPHENATION_MIN_BEFORE ] = 0; // invalid value.
+		$this->set_value( $s, 'data', $settings_data );
 
 		$tokens     = $this->tokenize( 'Änderungsmeldung' );
-		$hyphenated = $this->invoke_method( $this->fix, 'do_hyphenate', [ $tokens, $this->s ] );
+		$hyphenated = $this->invoke_method( $this->fix, 'do_hyphenate', [ $tokens, $s ] );
 		$this->assertEquals( $tokens, $hyphenated );
 	}
 
@@ -167,24 +177,31 @@ class Hyphenate_Fix_Test extends Token_Fix_Testcase {
 	 * @covers ::get_hyphenator()
 	 *
 	 * @uses PHP_Typography\Hyphenator::__construct
+	 * @uses PHP_Typography\Hyphenator::read_patterns_from_file
 	 * @uses PHP_Typography\Hyphenator::set_custom_exceptions
 	 * @uses PHP_Typography\Hyphenator::set_language
 	 * @uses PHP_Typography\Hyphenator::get_object_hash
 	 * @uses PHP_Typography\Hyphenator\Trie_Node
 	 */
 	public function test_get_hyphenator() {
-		$this->s[ Settings::HYPHENATION_MIN_LENGTH ]        = 2;
-		$this->s[ Settings::HYPHENATION_MIN_BEFORE ]        = 2;
-		$this->s[ Settings::HYPHENATION_MIN_AFTER ]         = 2;
-		$this->s[ Settings::HYPHENATION_CUSTOM_EXCEPTIONS ] = [ 'foo-bar' ];
-		$this->s[ Settings::HYPHENATION_LANGUAGE ]          = 'en-US';
+		$s = $this->s;
 
-		$h = $this->fix->get_hyphenator( $this->s );
+		$settings_data                                     = $this->get_value( $s, 'data' );
+		$settings_data[ Settings::HYPHENATION_MIN_LENGTH ] = 2;
+		$settings_data[ Settings::HYPHENATION_MIN_BEFORE ] = 2;
+		$settings_data[ Settings::HYPHENATION_MIN_AFTER ]  = 2;
+		$settings_data[ Settings::HYPHENATION_LANGUAGE ]   = 'en-US';
+		$settings_data[ Settings::HYPHENATION_CUSTOM_EXCEPTIONS ] = [ 'foo-bar' ];
+		$this->set_value( $s, 'data', $settings_data );
+
+		$h = $this->fix->get_hyphenator( $s );
 		$this->assertInstanceOf( \PHP_Typography\Hyphenator::class, $h );
 
-		$this->s[ Settings::HYPHENATION_CUSTOM_EXCEPTIONS ] = [ 'bar-foo' ];
+		$settings_data = $this->get_value( $s, 'data' );
+		$settings_data[ Settings::HYPHENATION_CUSTOM_EXCEPTIONS ] = [ 'bar-foo' ];
+		$this->set_value( $s, 'data', $settings_data );
 
-		$h = $this->fix->get_hyphenator( $this->s );
+		$h = $this->fix->get_hyphenator( $s );
 		$this->assertInstanceOf( \PHP_Typography\Hyphenator::class, $h );
 	}
 
@@ -220,9 +237,7 @@ class Hyphenate_Fix_Test extends Token_Fix_Testcase {
 	public function provide_hyphenate_data() {
 		return [
 			[ 'A few words to hyphenate, like KINGdesk Really, there should be more hyphenation here!', 'A few words to hy&shy;phen&shy;ate, like KING&shy;desk Re&shy;al&shy;ly, there should be more hy&shy;phen&shy;ation here!', 'en-US', true, true, true, 'p' ],
-			// Not working with new de pattern file: [ 'Sauerstofffeldflasche', 'Sau&shy;er&shy;stoff&shy;feld&shy;fla&shy;sche', 'de', true, true, true, false ],.
-			[ 'Sauerstofffeldflasche', 'Sauer&shy;stoff&shy;feld&shy;fla&shy;sche', 'de', true, true, true, 'p' ],
-			// Not working with new de pattern file: [ 'Sauerstoff-Feldflasche', 'Sau&shy;er&shy;stoff-Feld&shy;fla&shy;sche', 'de', true, true, true, true ],.
+			[ 'Sauerstofffeldflasche', 'Sau&shy;er&shy;stoff&shy;feld&shy;fla&shy;sche', 'de', true, true, true, 'p' ],
 			[ 'Geschäftsübernahme', 'Ge&shy;sch&auml;fts&shy;&uuml;ber&shy;nah&shy;me', 'de', true, true, true, 'p' ],
 			[ 'Trinkwasserinstallation', 'Trink&shy;was&shy;ser&shy;in&shy;stal&shy;la&shy;ti&shy;on', 'de', true, true, true, 'p' ],
 			[ 'Trinkwasserinstallation', 'Trink&shy;was&shy;ser&shy;in&shy;stal&shy;la&shy;ti&shy;on', 'de', true, true, true, 'h2' ],
@@ -255,26 +270,19 @@ class Hyphenate_Fix_Test extends Token_Fix_Testcase {
 	 * @param string $parent_tag           Parent tag.
 	 */
 	public function test_apply( $input, $result, $lang, $hyphenate_headings, $hyphenate_all_caps, $hyphenate_title_case, $parent_tag ) {
-		$this->s->set_hyphenation( true );
-		$this->s->set_hyphenation_language( $lang );
-		$this->s->set_min_length_hyphenation( 2 );
-		$this->s->set_min_before_hyphenation( 2 );
-		$this->s->set_min_after_hyphenation( 2 );
-		$this->s->set_hyphenate_headings( $hyphenate_headings );
-		$this->s->set_hyphenate_all_caps( $hyphenate_all_caps );
-		$this->s->set_hyphenate_title_case( $hyphenate_title_case );
-		$this->s->set_hyphenation_exceptions( [ 'KING-desk' ] );
+		$s = $this->s;
 
-		$parent = new \DOMElement( $parent_tag, $input );
+		$s->set_hyphenation( true );
+		$s->set_hyphenation_language( $lang );
+		$s->set_min_length_hyphenation( 2 );
+		$s->set_min_before_hyphenation( 2 );
+		$s->set_min_after_hyphenation( 2 );
+		$s->set_hyphenate_headings( $hyphenate_headings );
+		$s->set_hyphenate_all_caps( $hyphenate_all_caps );
+		$s->set_hyphenate_title_case( $hyphenate_title_case );
+		$s->set_hyphenation_exceptions( [ 'KING-desk' ] );
 
-		/**
-		 * Always a \DOMText.
-		 *
-		 * @var \DOMText
-		 */
-		$textnode = $parent->firstChild;
-
-		$this->assertFixResultSame( $input, $result, false, $textnode );
+		$this->assertFixResultSame( $input, $result, false, $this->getTextnode( $parent_tag, $input ) );
 	}
 
 	/**
@@ -298,16 +306,18 @@ class Hyphenate_Fix_Test extends Token_Fix_Testcase {
 	 * @param bool   $hyphenate_title_case Hyphenate words in Title Case.
 	 */
 	public function test_apply_off( $input, $result, $lang, $hyphenate_headings, $hyphenate_all_caps, $hyphenate_title_case ) {
-		$this->s->set_hyphenation( false );
-		$this->s->set_hyphenation_language( $lang );
-		$this->s->set_min_length_hyphenation( 2 );
-		$this->s->set_min_before_hyphenation( 2 );
-		$this->s->set_min_after_hyphenation( 2 );
-		$this->s->set_hyphenate_headings( $hyphenate_headings );
-		$this->s->set_hyphenate_all_caps( $hyphenate_all_caps );
-		$this->s->set_hyphenate_title_case( $hyphenate_title_case );
-		$this->s->set_hyphenation_exceptions( [ 'KING-desk' ] );
+		$s = $this->s;
 
-		$this->assertFixResultSame( $input, $input );
+		$s->set_hyphenation( false );
+		$s->set_hyphenation_language( $lang );
+		$s->set_min_length_hyphenation( 2 );
+		$s->set_min_before_hyphenation( 2 );
+		$s->set_min_after_hyphenation( 2 );
+		$s->set_hyphenate_headings( $hyphenate_headings );
+		$s->set_hyphenate_all_caps( $hyphenate_all_caps );
+		$s->set_hyphenate_title_case( $hyphenate_title_case );
+		$s->set_hyphenation_exceptions( [ 'KING-desk' ] );
+
+		$this->assertFixResultSame( $input, $input, false, $this->getTextnode( 'foo', $input ) );
 	}
 }

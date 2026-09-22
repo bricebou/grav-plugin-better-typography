@@ -19,22 +19,25 @@
     ],
 
     "require": {
-        "php": ">=5.6.0",
+        "php": ">=8.1.0",
         "ext-pcre": "*",
         "ext-mbstring": "*",
         "masterminds/html5": "^2.5.0"
     },
     "require-dev": {
         "ext-curl": "*",
-        "phpunit/phpunit": "5.*||6.*||7.*|8.*|9.*",
+        "phpunit/phpunit": "9.*|10.*|11.*|12.*|13.*",
         "brain/monkey": "^2.2.0",
-        "squizlabs/php_codesniffer": "^3",
-        "wp-coding-standards/wpcs": "^2.0",
+        "squizlabs/php_codesniffer": "^3|^4",
+        "wp-coding-standards/wpcs": "^3",
         "phpcompatibility/php-compatibility": "^9.0",
-        "dealerdirect/phpcodesniffer-composer-installer": "^0.6",
-        "phpstan/phpstan": "^0.12",
+        "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+        "phpstan/phpstan": "^2",
         "phpbench/phpbench": "^0.17||^1.0@dev",
-        "mundschenk-at/phpunit-cross-version": "dev-master"
+        "mikey179/vfsstream": "~1",
+        "mundschenk-at/phpunit-cross-version": "dev-main",
+        "phpstan/phpstan-mockery": "^2",
+        "phpstan/extension-installer": "^1.2"
     },
 
     "autoload": {
@@ -66,18 +69,26 @@
             "phpunit --testsuite PHP-Typography"
         ],
         "coverage": [
-            "phpunit --testsuite PHP-Typography --coverage-html tests/coverage"
+            "XDEBUG_MODE=coverage phpunit --testsuite PHP-Typography --coverage-html tests/coverage"
         ],
         "check": [
             "@phpcs",
             "@phpstan"
         ],
         "phpcs": [
-            "phpcs -p -s src/ tests/ --ignore=tests/perf.php,tests/coverage --extensions=php"
+            "phpcs -p -s src/ tests/ --ignore=tests/benchmarks,tests/coverage --extensions=php"
         ],
         "phpstan": [
-            "phpstan analyse --configuration=.phpstan.neon --level=7 --ansi src/",
-            "phpstan analyse --configuration=.phpstan.neon --level=6 --ansi tests/"
+            "phpstan analyze --memory-limit 1G"
+        ],
+        "phpstan-clean": [
+            "phpstan clear-result-cache && phpstan analyze --memory-limit 1G"
         ]
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "phpstan/extension-installer": true
+        }
     }
 }

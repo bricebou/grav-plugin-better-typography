@@ -2,8 +2,7 @@
 /**
  *  This file is part of PHP-Typography.
  *
- *  Copyright 2014-2019 Peter Putzer.
- *  Copyright 2012-2013 Marie Hogebrandt.
+ *  Copyright 2014-2024 Peter Putzer.
  *  Copyright 2009-2011 KINGdesk, LLC.
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -31,10 +30,11 @@ namespace PHP_Typography;
 use PHP_Typography\Text_Parser\Token;
 
 /**
- * A class to parse plain text (such as the data of DOMText).
+ * A class to parse plain text (such as the data of DOMText). If multibyte characters are passed,
+ * they must be encoded as UTF-8.
  *
- * Parse_Text assumes no HTML markup in the text (except for special html characters like &gt;).
- * If multibyte characters are passed, they must be encoded as UTF-8.
+ * @since 7.0.0 The `load`, `reload`, and `clear` methods have been removed in favor creating new parser
+ *              objects for each text fragment. The method `unload` has been replaced with `get_text`.
  */
 class Text_Parser {
 
@@ -63,7 +63,7 @@ class Text_Parser {
 	 *      zero-width-joiner ("&#8204;", "&#x200c;", "&zwj;")
 	 *      zero-width-non-joiner ("&#8205;", "&#x200d;", "&zwnj;")
 	 */
-	const _HTML_SPACING = '
+	private const HTML_SPACING = '
 			(?:
 				(?:										# alpha matches
 					&
@@ -77,7 +77,7 @@ class Text_Parser {
 					;
 				)
 				|
-				(?:										# hexidecimal matches
+				(?:										# hexadecimal matches
 					&\#x
 					(?: 000[9ad]|0020|00a0|1361|1680|200[0-9a]|202f|205f|3000 )
 					;
@@ -90,10 +90,10 @@ class Text_Parser {
 			)
 		'; // required modifiers: x (multiline pattern) i (case insensitive) u (utf8).
 
-	const _SPACE = '(?:\s|' . self::_HTML_SPACING . ')+'; // required modifiers: x (multiline pattern) i (case insensitive) $utf8.
+	private const SPACE = '(?:\s|' . self::HTML_SPACING . ')+'; // required modifiers: x (multiline pattern) i (case insensitive) $utf8.
 
 	/**
-	 * Find punctuation and symbols before words (to capture preceeding delimiating characters like hyphens or underscores)
+	 * Find punctuation and symbols before words (to capture preceding delimiting characters like hyphens or underscores)
 	 *
 	 * @see http://www.unicode.org/charts/PDF/U2000.pdf
 	 *
@@ -107,11 +107,11 @@ class Text_Parser {
 	 *      hyphens ("&#45;", "&#173;", "&#8208;", "&#8209;", "&#8210;", "&#x002d;", "&#x00ad;", "&#x2010;", "&#x2011;", "&#x2012;", "&shy;")
 	 *      underscore ("&#95;", "&#x005f;")
 	 */
-	const _HTML_PUNCTUATION = '
+	private const HTML_PUNCTUATION = '
 			(?:
 				(?:										# alpha matches
 					&
-					(?:quot|amp|frasl|lt|gt|iexcl|cent|pound|curren|yen|brvbar|sect|uml|pound|ordf|laquo|not|reg|macr|deg|plusmn|sup2|sup3|acute|micro|para|middot|cedil|sup1|ordm|raquo|frac14|frac12|frac34|iquest|times|divide|circ|tilde|thetasym|upsih|piv|ndash|mdash|lsquo|rsquo|sbquo|ldquo|rdquo|bdquo|dagger|Dagger|bull|hellip|permil|prime|Prime|lsaquo|rsaquo|oline|frasl|euro|trade|alefsym|larr|uarr|rarr|darr|harr|crarr|lArr|uArr|rArr|dArr|hArr|forall|part|exist|emptyn|abla|isin|notin|ni|prod|sum|minus|lowast|radic|prop|infin|ang|and|orc|ap|cup|int|there4|simc|ong|asymp|ne|equiv|le|ge|sub|supn|sub|sube|supe|oplus|otimes|perp|sdot|lceil|rceil|lfloor|rfloor|lang|rang|loz|spades|clubs|hearts|diams)
+					(?:quot|amp|frasl|lt|gt|iexcl|cent|pound|curren|yen|brvbar|sect|uml|pound|ordf|laquo|not|reg|macr|deg|plusmn|sup2|sup3|acute|micro|para|middot|cedil|sup1|ordm|raquo|frac14|frac12|frac34|iquest|times|divide|circ|tilde|thetasym|upsih|piv|ndash|mdash|lsquo|rsquo|sbquo|ldquo|rdquo|bdquo|dagger|Dagger|bull|hellip|permil|prime|Prime|lsaquo|rsaquo|oline|frasl|euro|trade|alefsym|larr|uarr|rarr|darr|harr|crarr|lArr|uArr|rArr|dArr|hArr|forall|part|exist|emptyn|abla|isin|notin|ni|prod|sum|minus|lowast|radic|prop|infin|ang|and|orc|ap|cup|int|there4|simc|ong|asymp|ne|equiv|le|ge|sub|supn|sub|sube|supe|oplus|otimes|perp|sdot|lceil|rceil|lfloor|rfloor|lang|rang|loz|spades|clubs|hearts|diams) # spellchecker:disable-line
 					;
 				)
 				|
@@ -121,7 +121,7 @@ class Text_Parser {
 					;
 				)
 				|
-				(?:										# hexidecimal matches
+				(?:										# hexadecimal matches
 					&\#x
 					(?: 002[1-9a-cef]|003[a-cef]|0040|005[b-e]|0060|007[b-e]|00a[1-9a-cef]|00b[0-9a-f]|00d7|00f7|02c6|02dc|03d[126]|201[3-9a-f]|202[0-7]|20[34][0-9a-f]|205[0-9a-e]|206[1-4]|20[a-c][0-9a-f]|21[0-4][0-9a-f]|219[0-9a-f]|2[23][0-9a-f][0-9a-f]|25[a-f][0-9a-f]|23[0-9a-f][0-9a-f]|2e[0-7][0-9a-f] )
 					;
@@ -129,7 +129,7 @@ class Text_Parser {
 			)
 		'; // required modifiers: x (multiline pattern) i (case insensitive) u (utf8).
 
-	const _PUNCTUATION = '
+	private const PUNCTUATION = '
 	(?:
 		(?:
 			[^\w\s\&\/\@]  # assume characters that are not word spaces or whitespace are punctuation
@@ -137,7 +137,7 @@ class Text_Parser {
 						   # exclude slash \/as to not include the last slash in a URL
 						   # exclude @ as to keep twitter names together
 			|
-			' . self::_HTML_PUNCTUATION . ' # catch any HTML reps of punctuation
+			' . self::HTML_PUNCTUATION . ' # catch any HTML reps of punctuation
 		)+
 	)
 	';// required modifiers: x (multiline pattern) i (case insensitive) u (utf8).
@@ -150,7 +150,7 @@ class Text_Parser {
 	 *      zero-width-joiner ("&#8204;", "&#x200c;", "&zwj;")
 	 *      zero-width-non-joiner ("&#8205;", "&#x200d;", "&zwnj;")
 	 */
-	const _HTML_LETTER_CONNECTORS = '
+	private const HTML_LETTER_CONNECTORS = '
 		(?:
 			(?:												# alpha matches
 				&
@@ -164,7 +164,7 @@ class Text_Parser {
 				;
 			)
 			|
-			(?:												# hexidecimal matches
+			(?:												# hexadecimal matches
 				&\#x
 				(?: 002d|005f|00ad|200[b-d]|201[0-2] )
 				;
@@ -182,7 +182,7 @@ class Text_Parser {
 	 *   decimal     48-57 65-90 97-122 192-214,216-246,248-255, 256-383
 	 *   hex         31-39 41-5a 61-7a  c0-d6   d8-f6   f8-ff    0100-017f
 	 */
-	const _HTML_LETTERS = '
+	private const HTML_LETTERS = '
 		(?:
 			(?:												# alpha matches
 				&
@@ -196,7 +196,7 @@ class Text_Parser {
 				;
 			)
 			|
-			(?:												# hexidecimal matches
+			(?:												# hexadecimal matches
 				(?:
 					&\#x00
 					(?: 3[1-9]|4[1-9a-f]|5[0-9a]|6[1-9a-f]|7[0-9a]|c[0-9a-f]|d[0-689]|e[0-9a-f]|f[0-689a-f] )
@@ -231,7 +231,7 @@ class Text_Parser {
 		)
 	'; // required modifiers: x (multiline pattern) i (case insensitive) u (utf8).
 
-	const _WORD = '
+	private const WORD = '
 	(?:
 		(?<![\w\&])	 # negative lookbehind to ensure
 					 #	1) we are proceeded by a non-word-character, and
@@ -239,75 +239,48 @@ class Text_Parser {
 		(?:
 			[\w\-\_\/]
 			|
-			' . self::_HTML_LETTERS . '
+			' . self::HTML_LETTERS . '
 			|
-			' . self::_HTML_LETTER_CONNECTORS . '
+			' . self::HTML_LETTER_CONNECTORS . '
 		)+
 	)
 	'; // required modifiers: x (multiline pattern) u (utf8).
 
 	// Find any text.
-	const _ANY_TEXT = self::_SPACE . '|' . self::_PUNCTUATION . '|' . self::_WORD; // required modifiers: x (multiline pattern) i (case insensitive) u (utf8).
+	private const ANY_TEXT = self::SPACE . '|' . self::PUNCTUATION . '|' . self::WORD; // required modifiers: x (multiline pattern) i (case insensitive) u (utf8).
 
 	// Regular expressions.
-	const _RE_ANY_TEXT               = '/(' . self::_ANY_TEXT . ')/Sxiu';
-	const _RE_SPACE                  = '/\A' . self::_SPACE . '\Z/Sxiu';
-	const _RE_PUNCTUATION            = '/\A' . self::_PUNCTUATION . '\Z/Ssxiu';
-	const _RE_WORD                   = '/\A' . self::_WORD . '\Z/Sxu';
-	const _RE_HTML_LETTER_CONNECTORS = '/' . self::_HTML_LETTER_CONNECTORS . '|[0-9\-_&#;\/]/Sxu';
-	const _RE_MAX_STRING_LENGTH      = '/\w{500}/Ss';
+	private const RE_ANY_TEXT               = '/(' . self::ANY_TEXT . ')/Sxiu';
+	private const RE_SPACE                  = '/\A' . self::SPACE . '\Z/Sxiu';
+	private const RE_PUNCTUATION            = '/\A' . self::PUNCTUATION . '\Z/Ssxiu';
+	private const RE_WORD                   = '/\A' . self::WORD . '\Z/Sxu';
+	private const RE_HTML_LETTER_CONNECTORS = '/' . self::HTML_LETTER_CONNECTORS . '|[0-9\-_&#;\/]/Sxu';
 
 	/**
 	 * The current strtoupper function to use (either 'strtoupper' or 'mb_strtoupper').
 	 *
 	 * @var callable
 	 */
-	private $current_strtoupper = 'strtoupper';
+	private $current_strtoupper;
 
 	/**
 	 * The tokenized text.
 	 *
-	 * @var array $text {
-	 *      @type Text_Parser\Token $index
-	 * }
+	 * @var Token[] $text Numerically indexed tokens.
 	 */
-	private $text = [];
+	private array $text = [];
 
 	/**
-	 * Creates a new parser object.
-	 */
-	public function __construct() {
-	}
-
-	/**
-	 * Tokenizes a string and stores the tokens in $this->text.
+	 * Creates a new parser object and parses the given text.
 	 *
-	 * @param string $raw_text A text fragment without any HTML markup.
-	 *
-	 * @return bool Returns `true` on successful completion, `false` otherwise.
+	 * @param string $text A text fragment without any HTML markup.
 	 */
-	public function load( $raw_text ) {
-		if ( ! \is_string( $raw_text ) ) {
-			return false; // we have an error, abort.
-		}
-
-		// Abort if a simple string exceeds 500 characters (security concern).
-		if ( \preg_match( self::_RE_MAX_STRING_LENGTH, $raw_text ) ) {
-			return false;
-		}
-
+	public function __construct( string $text ) {
 		// Detect encoding.
-		$str_functions = Strings::functions( $raw_text );
-		if ( empty( $str_functions ) ) {
-			return false; // unknown encoding.
-		}
-		$this->current_strtoupper = $str_functions['strtoupper'];
+		$this->current_strtoupper = Strings::functions( $text )['strtoupper'];
 
 		// Tokenize the raw text parts.
-		$this->text = self::tokenize( /** RE correct. @scrutinizer ignore-type */ \preg_split( self::_RE_ANY_TEXT, $raw_text, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY ) );
-
-		// The token array should never be empty.
-		return ! empty( $this->text );
+		$this->text = self::tokenize( \preg_split( self::RE_ANY_TEXT, $text, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY ) ?: [] ); // phpcs:ignore Universal.Operators.DisallowShortTernary -- Ensure array type in case of error.
 	}
 
 	/**
@@ -322,44 +295,43 @@ class Text_Parser {
 		$index  = 0;
 
 		foreach ( $parts as $part ) {
-			if ( \preg_match( self::_RE_SPACE, $part ) ) {
+			if ( \preg_match( self::RE_SPACE, $part ) ) {
 				$tokens[ $index ] = new Token( $part, Token::SPACE );
-			} elseif ( \preg_match( self::_RE_PUNCTUATION, $part ) ) {
+			} elseif ( \preg_match( self::RE_PUNCTUATION, $part ) ) {
 				$tokens[ $index ] = new Token( $part, Token::PUNCTUATION );
-			} elseif ( \preg_match( self::_RE_WORD, $part ) ) {
+			} elseif ( \preg_match( self::RE_WORD, $part ) ) {
 				// Make sure that things like email addresses and URLs are not broken up
-				// into words and punctuation not preceeded by an 'other'.
+				// into words and punctuation not preceded by an 'other'.
 				self::parse_ambiguous_token( Token::WORD, $part, $tokens, $index );
 			} else {
 				// Make sure that things like email addresses and URLs are not broken up into words
-				// and punctuation not preceeded by an 'other' or 'word'.
+				// and punctuation not preceded by an 'other' or 'word'.
 				self::parse_ambiguous_token( Token::OTHER, $part, $tokens, $index );
 			}
 
-			$index++;
+			++$index;
 		}
 
 		return $tokens;
 	}
 
 	/**
-	 * Parse ambigious tokens (that may need to be combined with the predecessors).
+	 * Parse ambiguous tokens (that may need to be combined with the predecessors).
 	 *
-	 * @param int     $expected_type Either Token::WORD or Token::OTHER.
-	 * @param string  $part          The string fragment to parse.
-	 * @param Token[] $tokens        The token array. Passed by reference.
-	 * @param int     $index         The current index. Passed by reference.
+	 * @param Token::WORD|Token::OTHER $expected_type The expected token type.
+	 * @param string                   $part          The string fragment to parse.
+	 * @param Token[]                  $tokens        The token array. Passed by reference.
+	 * @param int                      $index         The current index. Passed by reference.
 	 */
-	protected static function parse_ambiguous_token( $expected_type, $part, array &$tokens, &$index ) {
+	protected static function parse_ambiguous_token( $expected_type, $part, array &$tokens, &$index ): void {
 
 		// Make sure that things like email addresses and URLs are not broken up incorrectly.
-		if ( self::is_preceeded_by( Token::OTHER, $tokens, $index ) || ( Token::OTHER === $expected_type && self::is_preceeded_by( Token::WORD, $tokens, $index ) ) ) {
-			$index--;
-			$old_part         = $tokens[ $index ]->value;
+		if ( self::is_preceded_by( Token::OTHER, $tokens, $index ) || ( Token::OTHER === $expected_type && self::is_preceded_by( Token::WORD, $tokens, $index ) ) ) {
+			$old_part         = $tokens[ --$index ]->value;
 			$tokens[ $index ] = new Token( $old_part . $part, Token::OTHER );
 
-		} elseif ( self::is_preceeded_by( Token::PUNCTUATION, $tokens, $index ) && self::is_not_preceeded_by( Token::SPACE, $tokens, $index, 2 ) ) {
-			// Not preceeded by a non-space + punctuation.
+		} elseif ( self::is_preceded_by( Token::PUNCTUATION, $tokens, $index ) && self::is_not_preceded_by( Token::SPACE, $tokens, $index, 2 ) ) {
+			// Not preceded by a non-space + punctuation.
 			$old_part             = $tokens[ $index - 1 ]->value;
 			$older_part           = $tokens[ $index - 2 ]->value;
 			$tokens[ $index - 2 ] = new Token( $older_part . $old_part . $part, Token::OTHER );
@@ -375,65 +347,50 @@ class Text_Parser {
 	/**
 	 * Checks if the predecessor of the current token is of a certain type.
 	 *
-	 * @param  int   $type   A valid token type (e.g. Token::WORD).
-	 * @param  array $tokens An array of tokens.
-	 * @param  int   $index  The current token index.
-	 * @param  int   $steps  Optional. The number steps to go back for the check. Default 1.
+	 * @since 7.0.0 Renamed to `is_preceded_by`.
+	 *
+	 * @param  Token::* $type   A valid token type (e.g. Token::WORD).
+	 * @param  Token[]  $tokens An array of tokens.
+	 * @param  int      $index  The current token index.
+	 * @param  int      $steps  Optional. The number steps to go back for the check. Default 1.
 	 *
 	 * @return bool
 	 */
-	protected static function is_preceeded_by( $type, array $tokens, $index, $steps = 1 ) {
+	protected static function is_preceded_by( $type, array $tokens, $index, $steps = 1 ) {
 		return $index - $steps >= 0 && $type === $tokens[ $index - $steps ]->type;
 	}
 
 	/**
 	 * Checks if the predecessor of the current token is not of a certain type.
 	 *
-	 * @param  int   $type   A valid token type (e.g. Token::WORD).
-	 * @param  array $tokens An array of tokens.
-	 * @param  int   $index  The current token index.
-	 * @param  int   $steps  Optional. The number steps to go back for the check. Default 1.
+	 * @since 7.0.0 Renamed to `is_not_preceded_by`.
+	 *
+	 * @param  Token::* $type   A valid token type (e.g. Token::WORD).
+	 * @param  Token[]  $tokens An array of tokens.
+	 * @param  int      $index  The current token index.
+	 * @param  int      $steps  Optional. The number steps to go back for the check. Default 1.
 	 *
 	 * @return bool
 	 */
-	protected static function is_not_preceeded_by( $type, array $tokens, $index, $steps = 1 ) {
+	protected static function is_not_preceded_by( $type, array $tokens, $index, $steps = 1 ) {
 		return $index - $steps >= 0 && $type !== $tokens[ $index - $steps ]->type;
 	}
 
-
 	/**
-	 * Reloads $this->text (i.e. capture new inserted text, or remove those tokens whose values have been deleted).
+	 * Returns the complete text as a string.
 	 *
-	 * Warning: Tokens previously acquired through 'get' methods may not match new tokenization.
-	 *
-	 * @return bool Returns true on successful completion.
-	 */
-	public function reload() {
-		return $this->load( $this->unload() );
-	}
-
-	/**
-	 * Returns the complete text as a string and clears the parser.
+	 * @since 7.0.0
 	 *
 	 * @return string
 	 */
-	public function unload() {
+	public function get_text(): string {
 		$reassembled_text = '';
 
 		foreach ( $this->text as $token ) {
 			$reassembled_text .= $token->value;
 		}
 
-		$this->clear();
-
 		return $reassembled_text;
-	}
-
-	/**
-	 * Clears the currently set text from the parser.
-	 */
-	public function clear() {
-		$this->text = [];
 	}
 
 	/**
@@ -441,7 +398,7 @@ class Text_Parser {
 	 *
 	 * @param Token[] $tokens An array of tokens.
 	 */
-	public function update( $tokens ) {
+	public function update( $tokens ): void {
 		foreach ( $tokens as $index => $token ) {
 			$this->text[ $index ] = $this->text[ $index ]->with_value( $token->value );
 		}
@@ -477,18 +434,13 @@ class Text_Parser {
 	/**
 	 * Retrieves all tokens of the type "word".
 	 *
-	 * @param int $abc   Optional. Handling of all-letter words. Allowed values NO_ALL_LETTERS, ALLOW_ALL_LETTERS, REQUIRE_ALL_LETTERS. Default ALLOW_ALL_LETTERS.
-	 * @param int $caps  Optional. Handling of capitalized words (setting does not affect non-letter characters). Allowed values NO_ALL_CAPS, ALLOW_ALL_CAPS, REQUIRE_ALL_CAPS. Default ALLOW_ALL_CAPS.
-	 * @param int $comps Optional. Handling of compound words (setting does not affect all-letter words). Allowed values NO_COMPOUNDS, ALLOW_COMPOUNDS, REQUIRE_COMPOUNDS. Default ALLOW_COMPOUNDS.
+	 * @param self::*_ALL_LETTERS $abc   Optional. Handling of all-letter words. Allowed values NO_ALL_LETTERS, ALLOW_ALL_LETTERS, REQUIRE_ALL_LETTERS. Default ALLOW_ALL_LETTERS.
+	 * @param self::*_ALL_CAPS    $caps  Optional. Handling of capitalized words (setting does not affect non-letter characters). Allowed values NO_ALL_CAPS, ALLOW_ALL_CAPS, REQUIRE_ALL_CAPS. Default ALLOW_ALL_CAPS.
+	 * @param self::*_COMPOUNDS   $comps Optional. Handling of compound words (setting does not affect all-letter words). Allowed values NO_COMPOUNDS, ALLOW_COMPOUNDS, REQUIRE_COMPOUNDS. Default ALLOW_COMPOUNDS.
 	 *
 	 * @return Token[] An array of numerically indexed tokens.
 	 */
 	public function get_words( $abc = self::ALLOW_ALL_LETTERS, $caps = self::ALLOW_ALL_CAPS, $comps = self::ALLOW_COMPOUNDS ) {
-		// Return early if no text has been loaded.
-		if ( empty( $this->text ) ) {
-			return []; // abort.
-		}
-
 		// Result set.
 		$tokens = [];
 
@@ -509,8 +461,8 @@ class Text_Parser {
 	/**
 	 * Check if the value of the token conforms to the given policy for letters.
 	 *
-	 * @param  Token $token  Required.
-	 * @param  int   $policy Either ALLOW_ALL_LETTERS, REQUIRE_ALL_LETTERS or NO_ALL_LETTERS.
+	 * @param  Token               $token  Required.
+	 * @param  self::*_ALL_LETTERS $policy Either ALLOW_ALL_LETTERS, REQUIRE_ALL_LETTERS or NO_ALL_LETTERS.
 	 *
 	 * @return bool
 	 */
@@ -521,8 +473,8 @@ class Text_Parser {
 			self::ALLOW_ALL_LETTERS,
 			self::REQUIRE_ALL_LETTERS,
 			self::NO_ALL_LETTERS,
-			function( $value ) {
-				return \preg_replace( self::_RE_HTML_LETTER_CONNECTORS, '', $value );
+			function ( $value ) {
+				return \preg_replace( self::RE_HTML_LETTER_CONNECTORS, '', $value );
 			}
 		);
 	}
@@ -530,8 +482,8 @@ class Text_Parser {
 	/**
 	 * Check if the value of the token conforms to the given policy for all-caps words.
 	 *
-	 * @param  Token $token  Required.
-	 * @param  int   $policy Either ALLOW_ALL_CAPS, REQUIRE_ALL_CAPS or NO_ALL_CAPS.
+	 * @param  Token            $token  Required.
+	 * @param  self::*_ALL_CAPS $policy Either ALLOW_ALL_CAPS, REQUIRE_ALL_CAPS or NO_ALL_CAPS.
 	 *
 	 * @return bool
 	 */
@@ -549,8 +501,8 @@ class Text_Parser {
 	/**
 	 * Check if the value of the token conforms to the given policy for compound words.
 	 *
-	 * @param  Token $token  Required.
-	 * @param  int   $policy Either ALLOW_COMPOUNDS, REQUIRE_COMPOUNDS or NO_COMPOUNDS.
+	 * @param  Token             $token  Required.
+	 * @param  self::*_COMPOUNDS $policy Either ALLOW_COMPOUNDS, REQUIRE_COMPOUNDS or NO_COMPOUNDS.
 	 *
 	 * @return bool
 	 */
@@ -561,7 +513,7 @@ class Text_Parser {
 			self::ALLOW_COMPOUNDS,
 			self::NO_COMPOUNDS,
 			self::REQUIRE_COMPOUNDS,
-			function( $value ) {
+			function ( $value ) {
 				return \preg_replace( '/-/S', '', $value );
 			}
 		);

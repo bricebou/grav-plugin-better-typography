@@ -2,7 +2,7 @@
 /**
  *  This file is part of PHP-Typography.
  *
- *  Copyright 2017-2019 Peter Putzer.
+ *  Copyright 2017-2024 Peter Putzer.
  *
  *  This program is free software; you can redistribute it and/or modify modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,13 +26,10 @@
 
 namespace PHP_Typography\Fixes;
 
-use PHP_Typography\Settings;
+use PHP_Typography\Hyphenator\Cache;
 
 use PHP_Typography\Fixes\Node_Fix;
 use PHP_Typography\Fixes\Token_Fix;
-
-use PHP_Typography\Hyphenator\Cache;
-
 
 /**
  * A registry implementation containing the default fixes for PHP_Typography.
@@ -67,7 +64,7 @@ class Default_Registry extends Registry {
 	 * @param Cache|null $cache       Optional. A hyphenatation cache instance to use. Default null.
 	 * @param string[]   $css_classes Optional. An array of CSS classes to use. Defaults to null (i.e. use the predefined classes).
 	 */
-	public function __construct( Cache $cache = null, array $css_classes = [] ) {
+	public function __construct( ?Cache $cache = null, array $css_classes = [] ) {
 		parent::__construct();
 
 		if ( empty( $css_classes ) ) {
@@ -76,12 +73,17 @@ class Default_Registry extends Registry {
 
 		// Initialize node fixes.
 		foreach ( self::get_default_node_fixes() as $group => $node_fixes ) {
+			/**
+			 * Iterate over the node fixes and their additional parameters.
+			 *
+			 *  @var Node_Fix $fix A node fix class.
+			 */
 			foreach ( $node_fixes as $fix => $params ) {
 				$arguments = [];
 
 				if ( ! empty( $params['classes'] ) ) {
 					$arguments += \array_map(
-						function( $index ) use ( $css_classes ) {
+						function ( $index ) use ( $css_classes ) {
 							return $css_classes[ $index ];
 						},
 						$params['classes']
@@ -96,7 +98,11 @@ class Default_Registry extends Registry {
 			}
 		}
 
-		// Register token fixes.
+		/**
+		 * Also register the token fixes.
+		 *
+		 *  @var class-string<Token_Fix> $fix A token fix class.
+		 */
 		foreach ( self::get_default_token_fixes() as $fix => $params ) {
 			$arguments = [];
 
@@ -111,7 +117,7 @@ class Default_Registry extends Registry {
 	/**
 	 * Returns a configuration array for the default node fixes.
 	 *
-	 * @return array {
+	 * @return array<value-of<Registry::GROUPS>,array<class-string,mixed[]>> {
 	 *     @type array $group {
 	 *           A group of fixes.
 	 *
@@ -119,7 +125,7 @@ class Default_Registry extends Registry {
 	 *     }
 	 * }
 	 */
-	protected static function get_default_node_fixes() {
+	protected static function get_default_node_fixes(): array {
 		return [
 			self::CHARACTERS         => [
 				// Nodify anything that requires adjacent text awareness here.
@@ -179,15 +185,19 @@ class Default_Registry extends Registry {
 					'classes' => [ 'push-single', 'push-double', 'pull-single', 'pull-double' ],
 				],
 			],
+
+			self::POST_PROCESSING    => [
+				Node_Fixes\Unicode_Remapping_Fix::class => [],
+			],
 		];
 	}
 
 	/**
 	 * Returns a configuration array for the default token fixes.
 	 *
-	 * @return array
+	 * @return array<class-string<Token_Fix>,mixed[]>
 	 */
-	protected static function get_default_token_fixes() {
+	protected static function get_default_token_fixes(): array {
 		return [
 			Token_Fixes\Wrap_Hard_Hyphens_Fix::class   => [],
 			Token_Fixes\Smart_Dashes_Hyphen_Fix::class => [],

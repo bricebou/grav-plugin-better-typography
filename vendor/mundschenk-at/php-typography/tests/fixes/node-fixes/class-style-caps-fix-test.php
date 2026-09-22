@@ -2,7 +2,7 @@
 /**
  *  This file is part of PHP-Typography.
  *
- *  Copyright 2015-2019 Peter Putzer.
+ *  Copyright 2015-2024 Peter Putzer.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@
 namespace PHP_Typography\Tests\Fixes\Node_Fixes;
 
 use PHP_Typography\Fixes\Node_Fixes;
-use PHP_Typography\Settings;
 
 /**
  * Style_Caps_Fix unit test.
@@ -61,6 +60,7 @@ class Style_Caps_Fix_Test extends Node_Fix_Testcase {
 			[ 'foo 123BAR baz', 'foo <span class="caps">123BAR</span> baz' ],
 			[ 'during WP-CLI commands', 'during <span class="caps">WP-CLI</span> commands' ],
 			[ 'during WP‐CLI commands', 'during <span class="caps">WP‐CLI</span> commands' ], // HYPHEN instead of HYPHEN-MINUS.
+			[ 'UNESCO-Welterbestätten', '<span class="caps">UNESCO</span>-Welterbestätten' ],
 		];
 	}
 

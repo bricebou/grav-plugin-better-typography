@@ -2,7 +2,7 @@
 /**
  *  This file is part of PHP-Typography.
  *
- *  Copyright 2014-2019 Peter Putzer.
+ *  Copyright 2014-2026 Peter Putzer.
  *  Copyright 2009-2011 KINGdesk, LLC.
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -27,8 +27,11 @@
 
 namespace PHP_Typography;
 
+use PHP_Typography\Exceptions\Invalid_Path_Exception;
 use PHP_Typography\Fixes\Registry;
 use PHP_Typography\Fixes\Default_Registry;
+
+use Masterminds\HTML5;
 
 /**
  * Parses HTML5 (or plain text) and applies various typographic fixes to the text.
@@ -48,7 +51,7 @@ class PHP_Typography {
 	/**
 	 * A DOM-based HTML5 parser.
 	 *
-	 * @var \Masterminds\HTML5
+	 * @var ?HTML5
 	 */
 	private $html5_parser;
 
@@ -62,7 +65,7 @@ class PHP_Typography {
 	/**
 	 * The node fixes registry.
 	 *
-	 * @var Registry|null;
+	 * @var Registry|null
 	 */
 	private $registry;
 
@@ -71,7 +74,7 @@ class PHP_Typography {
 	 *
 	 * @var bool
 	 */
-	private $update_registry_cache;
+	private bool $update_registry_cache;
 
 	/**
 	 * Sets up a new PHP_Typography object.
@@ -79,7 +82,7 @@ class PHP_Typography {
 	 * @param Registry|null $registry Optional. A fix registry instance. Default null,
 	 *                                meaning the default fixes are used.
 	 */
-	public function __construct( Registry $registry = null ) {
+	public function __construct( ?Registry $registry = null ) {
 		$this->registry              = $registry;
 		$this->update_registry_cache = ! empty( $registry );
 	}
@@ -100,7 +103,7 @@ class PHP_Typography {
 	public function process( $html, Settings $settings, $is_title = false, array $body_classes = [] ) {
 		return $this->process_textnodes(
 			$html,
-			function( $html, $settings, $is_title ) {
+			function ( $html, $settings, $is_title ) {
 				$this->get_registry()->apply_fixes( $html, $settings, $is_title, false );
 			},
 			$settings,
@@ -126,7 +129,7 @@ class PHP_Typography {
 	public function process_feed( $html, Settings $settings, $is_title = false, array $body_classes = [] ) {
 		return $this->process_textnodes(
 			$html,
-			function( $html, $settings, $is_title ) {
+			function ( $html, $settings, $is_title ) {
 				$this->get_registry()->apply_fixes( $html, $settings, $is_title, true );
 			},
 			$settings,
@@ -150,7 +153,7 @@ class PHP_Typography {
 	 * @return string The processed $html.
 	 */
 	public function process_textnodes( $html, callable $fixer, Settings $settings, $is_title = false, array $body_classes = [] ) {
-		if ( isset( $settings['ignoreTags'] ) && $is_title && ( \in_array( 'h1', /** Array. @scrutinizer ignore-type */ $settings['ignoreTags'], true ) || \in_array( 'h2', /** Array. @scrutinizer ignore-type */ $settings['ignoreTags'], true ) ) ) {
+		if ( isset( $settings->tags_to_ignore ) && $is_title && ( \in_array( 'h1', $settings->tags_to_ignore, true ) || \in_array( 'h2',  $settings->tags_to_ignore, true ) ) ) {
 			return $html;
 		}
 
@@ -161,25 +164,45 @@ class PHP_Typography {
 		$dom = $this->parse_html( $html5_parser, $html, $settings, $body_classes );
 
 		// Abort if there were parsing errors.
-		if ( ! $dom instanceof \DOMDocument || ! $dom->hasChildNodes() ) {
-			return $html;
+		if ( $dom instanceof \DOMDocument && $dom->hasChildNodes() ) {
+
+			// Retrieve the document body.
+			$body_node = $dom->getElementsByTagName( 'body' )->item( 0 );
+			if ( $body_node instanceof \DOMElement ) {
+
+				// Process text nodes in the document body.
+				$this->process_textnodes_internal( $dom, $body_node, $fixer, $settings, $is_title );
+
+				return $html5_parser->saveHTML( $body_node->childNodes );
+			}
 		}
 
-		// Query some nodes in the DOM.
-		$xpath     = new \DOMXPath( $dom );
-		$body_node = $xpath->query( '/html/body' )->item( 0 );
+		return $html;
+	}
 
-		// Abort if we could not retrieve the body node.
-		// This should be refactored to use exceptions in a future version.
-		if ( ! $body_node instanceof \DOMNode ) {
-			return $html;
-		}
-
+	/**
+	 * Processes the text nodes below the <body> node.
+	 *
+	 * @since 6.7.0
+	 * @since 7.0.0 Parameter $dom added.
+	 *
+	 * @param \DOMDocument $dom        The document.
+	 * @param \DOMNode     $body_node  The body node containing the HTML fragment to process.
+	 * @param callable     $fixer      A callback that applies typography fixes to a single textnode.
+	 * @param Settings     $settings   A settings object.
+	 * @param bool         $is_title   A flag indicating whether the HTML fragment in the DOM is a title.
+	 */
+	private function process_textnodes_internal( \DOMDocument $dom, \DOMNode $body_node, callable $fixer, Settings $settings, bool $is_title ): void {
 		// Get the list of tags that should be ignored.
+		$xpath          = new \DOMXPath( $dom );
 		$tags_to_ignore = $this->query_tags_to_ignore( $xpath, $body_node, $settings );
 
-		// Start processing.
-		foreach ( $xpath->query( '//text()', $body_node ) as $textnode ) {
+		/**
+		 * Start processing.
+		 *
+		 * @phpstan-var \DOMText $textnode
+		 */
+		foreach ( $xpath->query( '//text()', $body_node ) as $textnode ) { // @phpstan-ignore-line -- The query is valid.
 			if (
 				// One of the ancestors should be ignored.
 				self::arrays_intersect( DOM::get_ancestors( $textnode ), $tags_to_ignore ) ||
@@ -195,26 +218,30 @@ class PHP_Typography {
 			// Apply fixes.
 			$fixer( $textnode, $settings, $is_title );
 
-			// Until now, we've only been working on a textnode: HTMLify result.
+			/**
+			 * Until now, we've only been working on a textnode: HTMLify result.
+			 *
+			 * @var string $new
+			 */
 			$new = $textnode->data;
 
-			// Replace original node (if anthing was changed).
+			// Replace original node (if anything was changed).
 			if ( $new !== $original ) {
-				$this->replace_node_with_html( $textnode, $settings->apply_character_mapping( $new ) );
+				$this->replace_node_with_html( $textnode, $new );
 			}
 		}
-
-		return $html5_parser->saveHTML( $body_node->childNodes );
 	}
 
 	/**
 	 * Determines whether two object arrays intersect. The second array is expected
 	 * to use the spl_object_hash for its keys.
 	 *
-	 * @param array $array1 The keys are ignored.
-	 * @param array $array2 This array has to be in the form ( $spl_object_hash => $object ).
+	 * @template T of object
 	 *
-	 * @return boolean
+	 * @param array<T> $array1 The keys are ignored.
+	 * @param array<T> $array2 This array has to be in the form ( $spl_object_hash => $object ).
+	 *
+	 * @return bool
 	 */
 	protected static function arrays_intersect( array $array1, array $array2 ) {
 		foreach ( $array1 as $value ) {
@@ -231,15 +258,15 @@ class PHP_Typography {
 	 *
 	 * @since 6.0.0 Parameter $body_classes added.
 	 *
-	 * @param \Masterminds\HTML5 $parser       An intialized parser object.
-	 * @param string             $html         The HTML fragment to parse (not a complete document).
-	 * @param Settings           $settings     The settings to apply.
-	 * @param string[]           $body_classes Optional. CSS classes added to the virtual
-	 *                                         <body> element used for processing. Default [].
+	 * @param HTML5    $parser       An initialized parser object.
+	 * @param string   $html         The HTML fragment to parse (not a complete document).
+	 * @param Settings $settings     The settings to apply.
+	 * @param string[] $body_classes Optional. CSS classes added to the virtual <body>
+	 *                               element used for processing. Default [].
 	 *
 	 * @return \DOMDocument|null The encoding has already been set to UTF-8. Returns null if there were parsing errors.
 	 */
-	public function parse_html( \Masterminds\HTML5 $parser, $html, Settings $settings, array $body_classes = [] ) {
+	public function parse_html( HTML5 $parser, $html, Settings $settings, array $body_classes = [] ) {
 		// Silence some parsing errors for invalid HTML.
 		\set_error_handler( [ $this, 'handle_parsing_errors' ] ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
 		$xml_error_handling = \libxml_use_internal_errors( true );
@@ -258,12 +285,12 @@ class PHP_Typography {
 
 		// Handle any parser errors.
 		$errors = $parser->getErrors();
-		if ( ! empty( $settings[ Settings::PARSER_ERRORS_HANDLER ] ) && ! empty( $errors ) ) {
-			$errors = $settings[ Settings::PARSER_ERRORS_HANDLER ]( $errors );
+		if ( isset( $settings->parser_errors_handler ) && \is_callable( $settings->parser_errors_handler ) && ! empty( $errors ) ) {
+			$errors = ( $settings->parser_errors_handler )( $errors );
 		}
 
 		// Return null if there are still unhandled parsing errors.
-		if ( ! empty( $errors ) && ! $settings[ Settings::PARSER_ERRORS_IGNORE ] ) {
+		if ( ! empty( $errors ) && ! $settings->ignore_parser_errors ) {
 			$dom = null;
 		}
 
@@ -302,19 +329,24 @@ class PHP_Typography {
 	public function query_tags_to_ignore( \DOMXPath $xpath, \DOMNode $initial_node, Settings $settings ) {
 		$elements    = [];
 		$query_parts = [];
-		if ( ! empty( $settings['ignoreTags'] ) ) {
-			$query_parts[] = '//' . \implode( ' | //', /** Array. @scrutinizer ignore-type */ $settings['ignoreTags'] );
+		if ( ! empty( $settings->tags_to_ignore ) ) {
+			$query_parts[] = '//' . \implode( ' | //', $settings->tags_to_ignore );
 		}
-		if ( ! empty( $settings['ignoreClasses'] ) ) {
-			$query_parts[] = "//*[contains(concat(' ', @class, ' '), ' " . \implode( " ') or contains(concat(' ', @class, ' '), ' ", /** Array. @scrutinizer ignore-type */ $settings['ignoreClasses'] ) . " ')]";
+		if ( ! empty( $settings->classes_to_ignore ) ) {
+			$query_parts[] = "//*[contains(concat(' ', @class, ' '), ' " . \implode( " ') or contains(concat(' ', @class, ' '), ' ", $settings->classes_to_ignore ) . " ')]";
 		}
-		if ( ! empty( $settings['ignoreIDs'] ) ) {
-			$query_parts[] = '//*[@id=\'' . \implode( '\' or @id=\'', /** Array. @scrutinizer ignore-type */ $settings['ignoreIDs'] ) . '\']';
+		if ( ! empty( $settings->ids_to_ignore ) ) {
+			$query_parts[] = '//*[@id=\'' . \implode( '\' or @id=\'', $settings->ids_to_ignore ) . '\']';
 		}
 
 		if ( ! empty( $query_parts ) ) {
 			$ignore_query = \implode( ' | ', $query_parts );
 
+			/**
+			 * No DOMNamespaceNodes here.
+			 *
+			 * @phpstan-var \DOMNodeList<\DOMNode> $nodelist
+			 */
 			$nodelist = $xpath->query( $ignore_query, $initial_node );
 			if ( false !== $nodelist ) {
 				$elements = DOM::nodelist_to_array( $nodelist );
@@ -330,13 +362,13 @@ class PHP_Typography {
 	 * @param \DOMNode $node    The node to replace.
 	 * @param string   $content The HTML fragment used to replace the node.
 	 *
-	 * @return \DOMNode|array An array of \DOMNode containing the new nodes or the old \DOMNode if the replacement failed.
+	 * @return \DOMNode[]|\DOMNode An array of \DOMNode containing the new nodes or the old \DOMNode if the replacement failed.
 	 */
 	public function replace_node_with_html( \DOMNode $node, $content ) {
 		$result = $node;
 
 		$parent = $node->parentNode;
-		if ( empty( $parent ) ) {
+		if ( null === $parent || null === $parent->ownerDocument ) {
 			return $node; // abort early to save cycles.
 		}
 
@@ -345,9 +377,19 @@ class PHP_Typography {
 
 		\set_error_handler( [ $this, 'handle_parsing_errors' ] ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
 
+		/**
+		 * Create DOM nodes from HTML fragment.
+		 *
+		 * @var \DOMDocumentFragment $html_fragment
+		 */
 		$html_fragment = $this->get_html5_parser()->loadHTMLFragment( $content );
 		if ( ! empty( $html_fragment ) ) {
-			$imported_fragment = $node->ownerDocument->importNode( $html_fragment, true );
+			/**
+			 * Import fragment into existing DOM.
+			 *
+			 * @var \DOMDocumentFragment $imported_fragment
+			 */
+			$imported_fragment = $parent->ownerDocument->importNode( $html_fragment, true );
 
 			if ( ! empty( $imported_fragment ) ) {
 				// Save the children of the imported DOMDocumentFragment before replacement.
@@ -385,12 +427,12 @@ class PHP_Typography {
 	/**
 	 * Retrieves the HTML5 parser instance.
 	 *
-	 * @return \Masterminds\HTML5
+	 * @return HTML5
 	 */
 	public function get_html5_parser() {
 		// Lazy-load HTML5 parser.
-		if ( ! isset( $this->html5_parser ) ) {
-			$this->html5_parser = new \Masterminds\HTML5( [ 'disable_html_ns' => true ] );
+		if ( null === $this->html5_parser ) {
+			$this->html5_parser = new HTML5( [ 'disable_html_ns' => true ] );
 		}
 
 		return $this->html5_parser;
@@ -402,7 +444,7 @@ class PHP_Typography {
 	 * @return Hyphenator\Cache
 	 */
 	public function get_hyphenator_cache() {
-		if ( ! isset( $this->hyphenator_cache ) ) {
+		if ( null === $this->hyphenator_cache ) {
 			$this->hyphenator_cache = new Hyphenator\Cache();
 		}
 
@@ -414,7 +456,7 @@ class PHP_Typography {
 	 *
 	 * @param Hyphenator\Cache $cache A hyphenator cache instance.
 	 */
-	public function set_hyphenator_cache( Hyphenator\Cache $cache ) {
+	public function set_hyphenator_cache( Hyphenator\Cache $cache ): void {
 		$this->hyphenator_cache = $cache;
 
 		// Change hyphenator cache for existing token fixes.
@@ -429,15 +471,16 @@ class PHP_Typography {
 	 * @param string $path The path in which to look for language plugin files.
 	 *
 	 * @return string[] An array in the form ( $language_code => $language_name ).
+	 *
+	 * @throws Invalid_Path_Exception If the directory cannot be read, an exception is thrown.
 	 */
 	private static function get_language_plugin_list( $path ) {
 		$languages = [];
 
 		// Try to open the given directory.
-		$handle = \opendir( $path );
+		$handle = @\opendir( $path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors -- Prevent PHP error code from being raised.
 		if ( false === $handle ) {
-			// Abort.
-			return $languages; // @codeCoverageIgnore
+			throw new Invalid_Path_Exception( "Unable to read directory '{$path}'" );
 		}
 
 		// Read all files in directory.
@@ -445,8 +488,8 @@ class PHP_Typography {
 		while ( $file ) {
 			// We only want the JSON files.
 			if ( '.json' === \substr( $file, -5 ) ) {
-				$file_content = \file_get_contents( $path . $file );
-				if ( \preg_match( '/"language"\s*:\s*((".+")|(\'.+\'))\s*,/', $file_content, $matches ) ) {
+				$file_content = (string) \file_get_contents( $path . $file );
+				if ( (bool) \preg_match( '/"language"\s*:\s*((".+")|(\'.+\'))\s*,/', $file_content, $matches ) ) {
 					$language_name = \substr( $matches[1], 1, -1 );
 					$language_code = \substr( $file, 0, -5 );
 

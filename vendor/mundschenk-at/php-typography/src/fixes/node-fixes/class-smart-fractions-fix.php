@@ -2,7 +2,7 @@
 /**
  *  This file is part of PHP-Typography.
  *
- *  Copyright 2017-2019 Peter Putzer.
+ *  Copyright 2017-2026 Peter Putzer.
  *
  *  This program is free software; you can redistribute it and/or modify modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@
 
 namespace PHP_Typography\Fixes\Node_Fixes;
 
-use PHP_Typography\DOM;
 use PHP_Typography\RE;
 use PHP_Typography\Settings;
 use PHP_Typography\U;
@@ -35,7 +34,7 @@ use PHP_Typography\U;
  * Applies smart fractions (if enabled).
  *
  * Call before style_numbers, but after smart_ordinal_suffix.
- * Purposefully seperated from smart_math because of HTML code injection.
+ * Purposefully separated from smart_math because of HTML code injection.
  *
  * @author Peter Putzer <github@mundschenk.at>
  *
@@ -47,12 +46,12 @@ class Smart_Fractions_Fix extends Abstract_Node_Fix {
 
 	const FRACTION_MATCHING = '/
 		# lookbehind assertion: makes sure we are not messing up a url
-		(?<=\A|\s|' . U::NO_BREAK_SPACE . '|' . U::NO_BREAK_NARROW_SPACE . ')
+		(?<=\A|\s|[' . U::NO_BREAK_SPACE . U::NO_BREAK_NARROW_SPACE . '])
 
 		(\d+)
 
 		# strip out any zero-width spaces inserted by wrap_hard_hyphens
-		(?:\s?\/\s?' . U::ZERO_WIDTH_SPACE . '?)
+		(?:\s?\/\s?[' . U::ZERO_WIDTH_SPACE . ']?)
 
 		(
 			# lookahead assertion: do not make fractions from x:x if x > 1
@@ -72,10 +71,10 @@ class Smart_Fractions_Fix extends Abstract_Node_Fix {
 			(?:' . U::SINGLE_PRIME . '|' . U::DOUBLE_PRIME . ')?
 
 			# handle ordinals after fractions
-			(?:\<sup\>(?:st|nd|rd|th)<\/sup\>)?
+			(?:\<sup\>(?:st|nd|rd|th)<\/sup\>)? # spellchecker:disable-line
 
 			# makes sure we are not messing up a url
-			(?:\Z|\s|' . U::NO_BREAK_SPACE . '|' . U::NO_BREAK_NARROW_SPACE . '|\.|,|\!|\?|\)|\;|\:|\'|")
+			(?:\Z|\s|[' . U::NO_BREAK_SPACE . U::NO_BREAK_NARROW_SPACE . ']|\.|,|\!|\?|\)|\;|\:|\'|")
 		)
 		/Sxu';
 
@@ -84,7 +83,7 @@ class Smart_Fractions_Fix extends Abstract_Node_Fix {
 			( \b (?: 0?[1-9] | 1[0-2] ) )
 
 			# capture any zero-width spaces inserted by wrap_hard_hyphens
-			(\s?\/\s?' . U::ZERO_WIDTH_SPACE . '?)
+			(\s?\/\s?[' . U::ZERO_WIDTH_SPACE . ']?)
 
 			# handle 4-decimal years
 			( [12][0-9]{3}\b )
@@ -131,26 +130,30 @@ class Smart_Fractions_Fix extends Abstract_Node_Fix {
 	/**
 	 * Apply the fix to a given textnode.
 	 *
-	 * @param \DOMText $textnode Required.
-	 * @param Settings $settings Required.
-	 * @param bool     $is_title Optional. Default false.
+	 * @since 7.0.0 All parameters are now required.
+	 *
+	 * @param \DOMText $textnode The DOM node.
+	 * @param Settings $settings The settings to apply.
+	 * @param bool     $is_title Indicates if the processed tokens occur in a title/heading context.
+	 *
+	 * @return void
 	 */
-	public function apply( \DOMText $textnode, Settings $settings, $is_title = false ) {
-		if ( empty( $settings[ Settings::SMART_FRACTIONS ] ) && empty( $settings[ Settings::FRACTION_SPACING ] ) ) {
+	public function apply( \DOMText $textnode, Settings $settings, $is_title ) {
+		if ( empty( $settings->smart_fractions ) && empty( $settings->fraction_spacing ) ) {
 			return;
 		}
 
 		// Cache textnode content.
 		$node_data = $textnode->data;
 
-		if ( ! empty( $settings[ Settings::FRACTION_SPACING ] ) && ! empty( $settings[ Settings::SMART_FRACTIONS ] ) ) {
-			$node_data = \preg_replace( self::SPACING, '$1' . U::NO_BREAK_NARROW_SPACE . '$2', $node_data );
-		} elseif ( ! empty( $settings[ Settings::FRACTION_SPACING ] ) && empty( $settings[ Settings::SMART_FRACTIONS ] ) ) {
-			$node_data = \preg_replace( self::SPACING, '$1' . U::NO_BREAK_SPACE . '$2', $node_data );
+		if ( ! empty( $settings->fraction_spacing ) && ! empty( $settings->smart_fractions ) ) {
+			$node_data = (string) \preg_replace( self::SPACING, '$1' . U::NO_BREAK_NARROW_SPACE . '$2', $node_data );
+		} elseif ( ! empty( $settings->fraction_spacing ) && empty( $settings->smart_fractions ) ) {
+			$node_data = (string) \preg_replace( self::SPACING, '$1' . U::NO_BREAK_SPACE . '$2', $node_data );
 		}
 
-		if ( ! empty( $settings[ Settings::SMART_FRACTIONS ] ) ) {
-			$node_data = \preg_replace(
+		if ( ! empty( $settings->smart_fractions ) ) {
+			$node_data = (string) \preg_replace(
 				[
 					// Escape sequences we don't want fractionified.
 					$this->escape_consecutive_years,

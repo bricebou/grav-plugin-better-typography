@@ -2,7 +2,7 @@
 /**
  *  This file is part of PHP-Typography.
  *
- *  Copyright 2015-2020 Peter Putzer.
+ *  Copyright 2015-2024 Peter Putzer.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@ namespace PHP_Typography\Tests\Fixes\Token_Fixes;
 
 use PHP_Typography\Fixes\Token_Fix;
 use PHP_Typography\Fixes\Token_Fixes;
-use PHP_Typography\Settings;
 
 /**
  * Hyphenate_Compounds_Fix unit test.
@@ -66,7 +65,7 @@ class Hyphenate_Compounds_Fix_Test extends Token_Fix_Testcase {
 	public function test_constructor() {
 		$fix = new Token_Fixes\Hyphenate_Compounds_Fix( null, true );
 
-		$this->assert_attribute_same( Token_Fix::COMPOUND_WORDS, 'target', $fix, 'The fixer should be targetting COMPOUND_WORDS tokens.' );
+		$this->assert_attribute_same( Token_Fix::COMPOUND_WORDS, 'target', $fix, 'The fixer should be targeting COMPOUND_WORDS tokens.' );
 		$this->assert_attribute_same( true, 'feed_compatible', $fix, 'The fixer should not be feed_compatible.' );
 	}
 
@@ -77,8 +76,7 @@ class Hyphenate_Compounds_Fix_Test extends Token_Fix_Testcase {
 	 */
 	public function provide_hyphenate_data() {
 		return [
-			// Not working with new de pattern file: [ 'Sauerstoff-Feldflasche', 'Sau&shy;er&shy;stoff-Feld&shy;fla&shy;sche', 'de', true, true, true, true ],.
-			[ 'Sauerstoff-Feldflasche', 'Sauer&shy;stoff-Feld&shy;fla&shy;sche', 'de', true, true, true, true ],
+			[ 'Sauerstoff-Feldflasche', 'Sau&shy;er&shy;stoff-Feld&shy;fla&shy;sche', 'de', true, true, true, true ],
 			[ 'Sauerstoff-Feldflasche', 'Sauerstoff-Feldflasche', 'de', true, true, true, false ],
 		];
 	}
@@ -100,9 +98,9 @@ class Hyphenate_Compounds_Fix_Test extends Token_Fix_Testcase {
 	 * @param bool   $hyphenate_headings   Hyphenate headings.
 	 * @param bool   $hyphenate_all_caps   Hyphenate words in ALL caps.
 	 * @param bool   $hyphenate_title_case Hyphenate words in Title Case.
-	 * @param bool   $hyphenate_compunds   Hyphenate compound-words.
+	 * @param bool   $hyphenate_compounds   Hyphenate compound-words.
 	 */
-	public function test_apply( $input, $result, $lang, $hyphenate_headings, $hyphenate_all_caps, $hyphenate_title_case, $hyphenate_compunds ) {
+	public function test_apply( $input, $result, $lang, $hyphenate_headings, $hyphenate_all_caps, $hyphenate_title_case, $hyphenate_compounds ) {
 		$this->s->set_hyphenation( true );
 		$this->s->set_hyphenation_language( $lang );
 		$this->s->set_min_length_hyphenation( 2 );
@@ -111,10 +109,10 @@ class Hyphenate_Compounds_Fix_Test extends Token_Fix_Testcase {
 		$this->s->set_hyphenate_headings( $hyphenate_headings );
 		$this->s->set_hyphenate_all_caps( $hyphenate_all_caps );
 		$this->s->set_hyphenate_title_case( $hyphenate_title_case );
-		$this->s->set_hyphenate_compounds( $hyphenate_compunds );
+		$this->s->set_hyphenate_compounds( $hyphenate_compounds );
 		$this->s->set_hyphenation_exceptions( [ 'KING-desk' ] );
 
-		$this->assertFixResultSame( $input, $result );
+		$this->assertFixResultSame( $input, $result, false, $this->getTextnode( 'foo', $input ) );
 	}
 
 	/**
@@ -134,9 +132,9 @@ class Hyphenate_Compounds_Fix_Test extends Token_Fix_Testcase {
 	 * @param bool   $hyphenate_headings   Hyphenate headings.
 	 * @param bool   $hyphenate_all_caps   Hyphenate words in ALL caps.
 	 * @param bool   $hyphenate_title_case Hyphenate words in Title Case.
-	 * @param bool   $hyphenate_compunds   Hyphenate compound-words.
+	 * @param bool   $hyphenate_compounds   Hyphenate compound-words.
 	 */
-	public function test_apply_off( $input, $result, $lang, $hyphenate_headings, $hyphenate_all_caps, $hyphenate_title_case, $hyphenate_compunds ) {
+	public function test_apply_off( $input, $result, $lang, $hyphenate_headings, $hyphenate_all_caps, $hyphenate_title_case, $hyphenate_compounds ) {
 		$this->s->set_hyphenation( false );
 		$this->s->set_hyphenation_language( $lang );
 		$this->s->set_min_length_hyphenation( 2 );
@@ -145,9 +143,9 @@ class Hyphenate_Compounds_Fix_Test extends Token_Fix_Testcase {
 		$this->s->set_hyphenate_headings( $hyphenate_headings );
 		$this->s->set_hyphenate_all_caps( $hyphenate_all_caps );
 		$this->s->set_hyphenate_title_case( $hyphenate_title_case );
-		$this->s->set_hyphenate_compounds( $hyphenate_compunds );
+		$this->s->set_hyphenate_compounds( $hyphenate_compounds );
 		$this->s->set_hyphenation_exceptions( [ 'KING-desk' ] );
 
-		$this->assertFixResultSame( $input, $input );
+		$this->assertFixResultSame( $input, $input, false, $this->getTextnode( 'foo', $input ) );
 	}
 }
