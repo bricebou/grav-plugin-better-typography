@@ -3,7 +3,7 @@
         'name' => 'bricebou/better-typography',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '5a7ecd47c0a9d2fb241296e0df08c7fc29f89912',
+        'reference' => '49b7f80f7d1ba3255969058bcbdc70cc3d2ab96f',
         'type' => 'grav-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'bricebou/better-typography' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '5a7ecd47c0a9d2fb241296e0df08c7fc29f89912',
+            'reference' => '49b7f80f7d1ba3255969058bcbdc70cc3d2ab96f',
             'type' => 'grav-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
