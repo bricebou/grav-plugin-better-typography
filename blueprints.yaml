@@ -45,7 +45,11 @@ form:
       fields:
         .language:
           type: select
-          label: Language
+          label: PLUGIN_BETTER_TYPOGRAPHY.LANGUAGE
+          help: PLUGIN_BETTER_TYPOGRAPHY.LANGUAGE_HELP
+          # The default keeps `language` as the first value of a new entry, so Admin2 shows it as the
+          # title of the collapsed entry (it displays the first text value).
+          default: default
           data-options@: 'Grav\Plugin\BetterTypographyPlugin::languageList'
 
         .useSmartQuotes:
