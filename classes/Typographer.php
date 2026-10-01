@@ -94,7 +94,7 @@ final class Typographer
             return $html;
         }
 
-        $language = self::normalizeLanguage($language) ?? self::DEFAULT_LANGUAGE;
+        $language = $this->effectiveLanguage($language);
         $this->settingsCache[$language] ??= $this->buildSettings($language);
 
         /** @var list<string> $twig */
@@ -135,14 +135,49 @@ final class Typographer
         return $language === '' ? null : $language;
     }
 
+    /**
+     * Hyphenation pattern files shipped with PHP-Typography, as code => name sorted by name.
+     *
+     * @return array<string, string>
+     */
+    public static function hyphenationLanguages(): array
+    {
+        $languages = [];
+        foreach (PHP_Typography::get_hyphenation_languages() as $code => $name) {
+            $languages[(string) $code] = (string) $name;
+        }
+
+        asort($languages, SORT_NATURAL | SORT_FLAG_CASE);
+
+        return $languages;
+    }
+
     private function engine(): PHP_Typography
     {
         return $this->engine ??= new PHP_Typography();
     }
 
     /**
+     * Language whose entry applies. A page without language (monolingual site) uses the "default" entry,
+     * or, when there is none, the only configured entry: a site configured with a single "fr" entry means it.
+     */
+    private function effectiveLanguage(?string $language): string
+    {
+        $language = self::normalizeLanguage($language);
+        if ($language !== null) {
+            return $language;
+        }
+
+        if (! isset($this->perLanguage[self::DEFAULT_LANGUAGE]) && count($this->perLanguage) === 1) {
+            return array_key_first($this->perLanguage);
+        }
+
+        return self::DEFAULT_LANGUAGE;
+    }
+
+    /**
      * Configuration entry for a language ("fr-ca"), falling back to its primary subtag ("fr"),
-     * then to the "default" entry, then to an empty set.
+     * then to the "default" entry, then to an empty set (see effectiveLanguage() for pages without language).
      *
      * @return array<string, mixed>
      */
@@ -210,7 +245,7 @@ final class Typographer
 
         // Hyphenation.
         $hyphenationLanguage = $this->toBool($config['applyHyphenations'] ?? null, false)
-            ? $this->resolveHyphenationLanguage($language)
+            ? $this->resolveHyphenationLanguage($language, $config['hyphenationLanguage'] ?? null)
             : null;
         $settings->set_hyphenation($hyphenationLanguage !== null);
         if ($hyphenationLanguage !== null) {
@@ -274,24 +309,35 @@ final class Typographer
     }
 
     /**
-     * Maps a Grav language code onto one of the hyphenation pattern files shipped with PHP-Typography
-     * ("fr" => "fr", "en" => "en-US", "de-at" => "de", ...). Returns null when none matches.
+     * Hyphenation patterns of the entry: the selected `hyphenationLanguage`, else the pattern file matching the
+     * language code ("fr" => "fr", "en" => "en-US", "de-at" => "de", ...). Returns null when none matches.
      */
-    private function resolveHyphenationLanguage(string $language): ?string
+    private function resolveHyphenationLanguage(string $language, mixed $configured): ?string
     {
-        if ($language === self::DEFAULT_LANGUAGE) {
-            $this->warnOnce('Hyphenation is enabled for the "default" entry but the page has no language: nothing to hyphenate with.');
-
-            return null;
-        }
-
         /** @var array<string, string>|null $available lower-cased code => actual code */
         static $available = null;
         if ($available === null) {
             $available = [];
-            foreach (array_keys(PHP_Typography::get_hyphenation_languages()) as $code) {
-                $available[strtolower((string) $code)] = (string) $code;
+            foreach (array_keys(self::hyphenationLanguages()) as $code) {
+                $available[strtolower($code)] = $code;
             }
+        }
+
+        $wanted = self::normalizeLanguage($configured);
+        if ($wanted !== null) {
+            if (isset($available[$wanted])) {
+                return $available[$wanted];
+            }
+
+            $this->warnOnce(sprintf('Unknown hyphenation language "%s" (language "%s"); hyphenation skipped.', $wanted, $language));
+
+            return null;
+        }
+
+        if ($language === self::DEFAULT_LANGUAGE) {
+            $this->warnOnce('Hyphenation is enabled for the "default" entry but the page has no language: select its hyphenation language.');
+
+            return null;
         }
 
         $primary = $this->primarySubtag($language);

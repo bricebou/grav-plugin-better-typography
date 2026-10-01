@@ -153,6 +153,15 @@ form:
           validate:
             type: bool
 
+        .hyphenationLanguage:
+          type: select
+          size: medium
+          classes: fancy
+          label: PLUGIN_BETTER_TYPOGRAPHY.HYPHENATION_LANGUAGE
+          help: PLUGIN_BETTER_TYPOGRAPHY.HYPHENATION_LANGUAGE_HELP
+          default: ''
+          data-options@: 'Grav\Plugin\BetterTypographyPlugin::hyphenationLanguageList'
+
         .applyFrenchSpecific:
           type: toggle
           label: PLUGIN_BETTER_TYPOGRAPHY.FRENCH

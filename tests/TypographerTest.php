@@ -115,6 +115,38 @@ final class TypographerTest extends TestCase
         self::assertSame('<p>Bonjour' . self::NBSP . ': ca va' . self::NBSP . '? Nous sommes a votre service.</p>', $result);
     }
 
+    #[TestDox('Monolingual sites without a "default" entry use the only configured entry')]
+    public function testPagesWithoutLanguageUseTheOnlyEntryWhenThereIsNoDefault(): void
+    {
+        $result = $this->typographer([$this->french()])->process('<p>Il a dit : "bonjour" a votre service.</p>');
+
+        self::assertSame(
+            '<p>Il a dit' . self::NBSP . ': «' . self::NBSP . 'bonjour' . self::NBSP . '» a votre service.</p>',
+            $result,
+        );
+    }
+
+    public function testOnlyEntryIsNotUsedForOtherLanguagesNorWhenSeveralEntriesExist(): void
+    {
+        $html = '<p>"a"</p>';
+
+        // A page in another language keeps the defaults: the fallback only covers pages without language.
+        self::assertStringContainsString('“a”', $this->typographer([$this->french()])->process($html, 'en'));
+        self::assertStringContainsString('“a”', $this->typographer([
+            $this->french(),
+            [
+                'language' => 'de',
+                'smartQuotesStyle' => 'doubleLow9',
+            ],
+        ])->process($html));
+        self::assertStringContainsString('“a”', $this->typographer([
+            $this->french(),
+            [
+                'language' => 'default',
+            ],
+        ])->process($html));
+    }
+
     #[TestDox('Issue #5: one-letter words keep a plain space under the French rules ("à votre service")')]
     public function testSingleCharacterWordSpacingIsDisabledByFrenchRulesUnlessForced(): void
     {
@@ -185,6 +217,68 @@ final class TypographerTest extends TestCase
         self::assertStringContainsString('anti' . self::SHY . 'cons' . self::SHY . 'ti', $typographer->process('<p>anticonstitutionnellement toujours</p>', 'fr'));
         self::assertStringContainsString('Donau' . self::SHY . 'dampf', $typographer->process('<p>Donaudampfschifffahrtsgesellschaft heute</p>', 'de-AT'));
         self::assertSame([], $this->warnings);
+    }
+
+    public function testHyphenationLanguageCanBeSelected(): void
+    {
+        $html = '<p>anticonstitutionnellement toujours</p>';
+
+        // The "default" entry has no language of its own: the selected patterns apply.
+        $typographer = $this->typographer([[
+            'language' => 'default',
+            'applyHyphenations' => true,
+            'hyphenationLanguage' => 'fr',
+        ]]);
+        self::assertStringContainsString('anti' . self::SHY . 'cons' . self::SHY . 'ti', $typographer->process($html));
+
+        // The selection wins over the language of the entry: British patterns instead of the en => en-US default.
+        $typographer = $this->typographer([[
+            'language' => 'en',
+            'applyHyphenations' => true,
+            'hyphenationLanguage' => 'en-GB',
+        ]]);
+        self::assertStringContainsString('extraordin' . self::SHY . 'ary', $typographer->process('<p>extraordinary considerations here</p>', 'en'));
+
+        // The only entry of a monolingual site hyphenates with the patterns of its language.
+        $typographer = $this->typographer([$this->french([
+            'applyHyphenations' => true,
+        ])]);
+        self::assertStringContainsString('anti' . self::SHY . 'cons' . self::SHY . 'ti', $typographer->process($html));
+        self::assertSame([], $this->warnings);
+    }
+
+    public function testDefaultEntryWithoutHyphenationLanguageOrWithAnUnknownOneIsSkippedWithAWarning(): void
+    {
+        $html = '<p>anticonstitutionnellement toujours</p>';
+
+        $typographer = $this->typographer([[
+            'language' => 'default',
+            'applyHyphenations' => true,
+        ]]);
+        self::assertStringNotContainsString(self::SHY, $typographer->process($html));
+        self::assertCount(1, $this->warnings);
+        self::assertStringContainsString('select its hyphenation language', $this->warnings[0]);
+
+        $typographer = $this->typographer([[
+            'language' => 'default',
+            'applyHyphenations' => true,
+            'hyphenationLanguage' => 'xx',
+        ]]);
+        self::assertStringNotContainsString(self::SHY, $typographer->process($html));
+        self::assertCount(1, $this->warnings);
+        self::assertStringContainsString('Unknown hyphenation language "xx"', $this->warnings[0]);
+    }
+
+    public function testHyphenationLanguagesAreListedByName(): void
+    {
+        $languages = Typographer::hyphenationLanguages();
+
+        self::assertSame('French', $languages['fr'] ?? null);
+        self::assertArrayHasKey('en-GB', $languages);
+        $names = array_values($languages);
+        $sorted = $names;
+        natcasesort($sorted);
+        self::assertSame(array_values($sorted), $names);
     }
 
     public function testHyphenationIsSkippedWithAWarningWhenNoPatternsExist(): void

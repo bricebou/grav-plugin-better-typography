@@ -166,6 +166,28 @@ class BetterTypographyPlugin extends Plugin
     }
 
     /**
+     * Hyphenation pattern files, "Automatic" first (used by blueprints.yaml).
+     *
+     * @return array<string, string>
+     */
+    public static function hyphenationLanguageList(): array
+    {
+        // Admin renders the blueprint of a disabled plugin too, and Grav registers the autoloader of enabled ones only.
+        if (! class_exists(Typographer::class)) {
+            require_once __DIR__ . '/vendor/autoload.php';
+        }
+
+        $languages = [
+            '' => 'PLUGIN_BETTER_TYPOGRAPHY.HYPHENATION_LANGUAGE_AUTO',
+        ];
+        foreach (Typographer::hyphenationLanguages() as $code => $name) {
+            $languages[$code] = sprintf('%s (%s)', $name, $code);
+        }
+
+        return $languages;
+    }
+
+    /**
      * `bettertypo` Twig filter.
      *
      * @param mixed       $string   The (trusted) HTML or text to improve.
