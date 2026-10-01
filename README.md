@@ -51,6 +51,7 @@ perLanguageSettings:
     useSmartDashes: true                      # replace -- & --- to en & em dashes, depending on the selected dashStyle
     smartDashesStyle: international           # 'international' or 'traditionalUS'
     applyHyphenations: false
+    hyphenationLanguage: ''                   # hyphenation patterns ('fr', 'en-GB', 'de'...); '' = the patterns matching the entry language (required for 'default' on a monolingual site)
     applyFrenchSpecific: false                # apply specific french typographic rules such as unbreakable space before double punctuation (?, !, :, ;) and XVI<sup>e</sup> siècle
     singleCharacterWordSpacing: auto          # 'auto', 'enabled' or 'disabled': glue one-letter words to the next word ("a&nbsp;word"); 'auto' = enabled unless applyFrenchSpecific is on ("à votre service" keeps its space)
     useSmartDiacritics: false                 # replace "creme brulee" with "crème brûlée". Only available for de-DE and en-US languages
@@ -60,18 +61,22 @@ perLanguageSettings:
 
 Each entry of `perLanguageSettings` applies to the pages written in that language (`language` must be one of the
 languages declared in `system.languages.supported`). A regional code such as `fr-CA` falls back to the `fr` entry,
-and any language without an entry uses the `default` one.
+and any language without an entry uses the `default` one. On a monolingual site (pages without language), the
+`default` entry applies, or the only configured entry when there is no `default` one (a single `fr` entry is used
+as is).
 
 Notes:
 
 - Code samples and scripts are never touched: `<code>`, `<pre>`, `<kbd>`, `<script>`, `<style>`, form controls... keep their content.
 - One-letter words are glued to the next word (`a&nbsp;word`) unless `singleCharacterWordSpacing` is `disabled`, or `auto` with the French rules enabled (French typography keeps the plain space in "à votre service").
-- Hyphenation uses the pattern file matching the page language (`fr`, `de`, `en` → `en-US`...). Languages without
-  patterns are left unhyphenated and a warning is written to the Grav log.
+- Hyphenation uses the patterns selected in `hyphenationLanguage`, or by default the pattern file matching the
+  language of the entry (`fr`, `de`, `en` → `en-US`...). The `default` entry has no language: select its
+  hyphenation language. Languages without patterns are left unhyphenated and a warning is written to the Grav log.
 - Invalid quote or dash style names (for example in a hand-written configuration file) fall back to the default
   style instead of breaking the page; a warning is written to the Grav log.
 - A fragment whose HTML cannot be parsed is left untouched, with a warning in the Grav log.
-- On a monolingual site the pages have no language: the `default` entry applies, including its French rules toggle.
+- On a monolingual site the pages have no language: the `default` entry (or the only entry) applies, including its
+  French rules toggle.
 
 Note that if you use the Admin Plugin, a file with your configuration named better-typography.yaml will be saved in the `user/config/plugins/`-folder once the configuration is saved in the Admin.
 

@@ -6,6 +6,8 @@
     * The `bettertypo` filter is registered in the Grav 2 Twig content sandbox (`onBuildTwigSandboxPolicy`)
     * Regional language codes (`fr-CA`) fall back to the base language entry (`fr`), then to `default`
     * Hyphenation patterns are resolved from the page language (`en` → `en-US`, `de-AT` → `de`...); unknown languages are skipped with a warning in the Grav log
+    * New per-language `hyphenationLanguage` option: hyphenation patterns to use (`fr`, `en-GB`...), needed by the `default` entry, which has no language
+    * Monolingual sites: without a `default` entry, the only configured entry applies (a single `fr` entry used to be ignored)
     * Fix #5: new `singleCharacterWordSpacing` option (`auto`/`enabled`/`disabled`); `auto` no longer glues one-letter words to the next word when the French rules are applied ("à votre service" keeps its space)
     * Admin2: a new per-language entry now shows its language in the collapsed header (the `language` select has a default); the label and help of the select are translated (en/fr)
     * PHPUnit test suite for the typography engine (`composer test`)

@@ -8,6 +8,7 @@ perLanguageSettings:
     useSmartDashes: true                      # replace -- & --- to en & em dashes, depending on the selected dashStyle
     smartDashesStyle: international           # 'international' or 'traditionalUS'
     applyHyphenations: false
+    hyphenationLanguage: ''                   # hyphenation patterns ('fr', 'en-GB', 'de'...); '' = the patterns matching the entry language (required for 'default' on a monolingual site)
     applyFrenchSpecific: false                # apply specific french typographic rules such as unbreakable space before double punctuation (?, !, :, ;) and XVI<sup>e</sup> siècle
     singleCharacterWordSpacing: auto          # 'auto', 'enabled' or 'disabled': glue one-letter words to the next word ("a&nbsp;word"); 'auto' = enabled unless applyFrenchSpecific is on ("à votre service" keeps its space)
     useSmartDiacritics: false                 # replace "creme brulee" with "crème brûlée". Only available for de-DE and en-US replacement lists
